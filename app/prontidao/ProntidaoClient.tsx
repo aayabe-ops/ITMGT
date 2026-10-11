@@ -63,6 +63,23 @@ export default function ProntidaoClient() {
 
   const sevCount = (n: number): Sev => (n > 0 ? 'ok' : 'block')
 
+  // Passos da estrutura, na ordem de dependência — fonte única p/ progresso, pendências e lista.
+  type Step = { label: string; count: number; sev: Sev; note?: string; href: string }
+  const steps: Step[] = d ? [
+    { label: 'Moedas', count: d.currencies, sev: sevCount(d.currencies), href: '/cadastros/moedas' },
+    { label: 'Plataformas', count: d.platforms, sev: sevCount(d.platforms), href: '/cadastros/plataformas' },
+    { label: 'Países', count: d.countries, sev: sevCount(d.countries), href: '/cadastros/paises' },
+    { label: 'Câmbio', count: d.exchange, sev: d.exchange > 0 ? 'ok' : 'warn', note: d.exchange > 0 ? undefined : 'sem taxa — necessário p/ USD', href: '/cadastros/cambio' },
+    { label: 'Empresas', count: d.companies, sev: sevCount(d.companies), href: '/cadastros/empresas' },
+    { label: 'Unidades', count: d.unidades, sev: sevCount(d.unidades), href: '/cadastros/unidades' },
+    { label: 'Centro de Custo', count: d.units, sev: d.units === 0 ? 'block' : d.units_orphan > 0 ? 'warn' : 'ok', note: d.units_orphan > 0 ? `${d.units_orphan} sem unidade` : undefined, href: '/cadastros/centro-custo' },
+    { label: 'Categorias', count: d.categories, sev: sevCount(d.categories), href: '/cadastros/categorias' },
+    { label: 'Fornecedores', count: d.suppliers, sev: sevCount(d.suppliers), href: '/cadastros/fornecedores' },
+  ] : []
+  const readyCount = steps.filter(s => s.sev === 'ok').length
+  const pct = steps.length ? Math.round(readyCount / steps.length * 100) : 0
+  const pending = steps.filter(s => s.sev !== 'ok')
+
   return (
     <div className="page">
       <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
@@ -85,6 +102,40 @@ export default function ProntidaoClient() {
 
       {d && (
         <>
+          {/* Progresso geral + próximas pendências */}
+          <div className="grid lg:grid-cols-3 gap-4 mb-6">
+            <div className={`rounded-2xl p-5 text-white shadow-sm bg-gradient-to-br ${pct === 100 ? 'from-teal-600 to-emerald-500' : 'from-navy-700 to-navy-500'}`}>
+              <p className="text-[11px] uppercase tracking-wide text-white/70">Progresso da estrutura</p>
+              <p className="text-3xl font-bold font-mono mt-1 leading-none">{pct}%</p>
+              <p className="text-[11px] text-white/70 mt-1.5">{readyCount} de {steps.length} passos prontos</p>
+              <div className="mt-3 h-1.5 w-full rounded-full bg-white/20 overflow-hidden">
+                <div className="h-full rounded-full bg-white/90" style={{ width: `${pct}%` }} />
+              </div>
+            </div>
+            <div className="lg:col-span-2 card p-4 rounded-2xl">
+              <h2 className="font-semibold text-slate-800 text-sm px-1 pb-2 flex items-center gap-2">
+                {pending.length === 0
+                  ? <><CheckCircle2 className="w-4 h-4 text-emerald-600" /> Tudo pronto — nada pendente</>
+                  : <><AlertTriangle className="w-4 h-4 text-amber-500" /> Pendências — resolva nesta ordem</>}
+              </h2>
+              {pending.length === 0 ? (
+                <p className="text-sm text-slate-500 px-1">Sua estrutura está completa. Você já pode orçar e lançar.</p>
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  {pending.map((s, i) => (
+                    <Link key={s.label} href={s.href}
+                      className="flex items-center gap-3 px-3 py-2 rounded-lg border border-slate-100 hover:border-blue-200 hover:bg-blue-50/40 transition-colors group">
+                      <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-500 text-[11px] font-semibold flex items-center justify-center shrink-0">{i + 1}</span>
+                      <Dot sev={s.sev} />
+                      <span className="text-sm text-slate-700 flex-1 min-w-0 truncate">{s.label}{s.note ? <span className="text-amber-600 font-normal"> · {s.note}</span> : s.count === 0 ? <span className="text-slate-400 font-normal"> · nenhum cadastrado</span> : null}</span>
+                      <span className="text-xs text-blue-600 font-medium flex items-center gap-1 shrink-0">Resolver <ArrowRight className="w-3.5 h-3.5" /></span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Portões */}
           <div className="grid sm:grid-cols-2 gap-4 mb-6">
             {[
@@ -111,17 +162,7 @@ export default function ProntidaoClient() {
           <div className="card p-4 mb-6">
             <h2 className="font-semibold text-slate-800 px-2 pb-1 pt-1 text-sm">Cadastro — na ordem de dependência</h2>
             <div className="divide-y divide-slate-50">
-              <Line sev={sevCount(d.currencies)} label="Moedas" count={d.currencies} href="/cadastros/moedas" />
-              <Line sev={sevCount(d.platforms)} label="Plataformas" count={d.platforms} href="/cadastros/plataformas" />
-              <Line sev={sevCount(d.countries)} label="Países" count={d.countries} href="/cadastros/paises" />
-              <Line sev={d.exchange > 0 ? 'ok' : 'warn'} label="Câmbio" count={d.exchange}
-                note={d.exchange > 0 ? undefined : 'sem taxa — necessário p/ USD'} href="/cadastros/cambio" />
-              <Line sev={sevCount(d.companies)} label="Empresas" count={d.companies} href="/cadastros/empresas" />
-              <Line sev={sevCount(d.unidades)} label="Unidades" count={d.unidades} href="/cadastros/unidades" />
-              <Line sev={d.units === 0 ? 'block' : d.units_orphan > 0 ? 'warn' : 'ok'} label="Centro de Custo" count={d.units}
-                note={d.units_orphan > 0 ? `${d.units_orphan} sem unidade` : undefined} href="/cadastros/centro-custo" />
-              <Line sev={sevCount(d.categories)} label="Categorias" count={d.categories} href="/cadastros/categorias" />
-              <Line sev={sevCount(d.suppliers)} label="Fornecedores" count={d.suppliers} href="/cadastros/fornecedores" />
+              {steps.map(s => <Line key={s.label} sev={s.sev} label={s.label} count={s.count} note={s.note} href={s.href} />)}
             </div>
           </div>
 
