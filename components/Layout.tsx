@@ -42,31 +42,33 @@ export default function Layout({ user, unit, children }: Props) {
       { href: '/report/despesa-unidade', key: 'reportUnit',      icon: Warehouse },
       { href: '/report/contratos',       key: 'reportContracts', icon: FileSignature },
     ] },
-    // ── CONFIGURAÇÕES (infraestrutura, isolada no rodapé) ──
-    { key: 'refs', section: 'config', items: [
-      { href: '/prontidao',              key: 'readiness',     icon: Gauge },
-      { href: '/cadastros/moedas',       key: 'currencies',    icon: CircleDollarSign },
-      { href: '/cadastros/plataformas',  key: 'platforms',     icon: Layers },
-      { href: '/cadastros/categorias',   key: 'categories',    icon: Tags },
-      { href: '/cadastros/tipos',        key: 'supplierTypes', icon: Boxes },
-      { href: '/cadastros/solution-type', key: 'solutionTypes', icon: Cpu },
-      { href: '/cadastros/projetos',     key: 'projects',      icon: FolderKanban },
+    // ── CONFIGURAÇÕES (isolada no rodapé) — 4 grupos por tarefa + Saúde do cadastro (home).
+    // Ordem dentro de cada grupo = ordem de preenchimento (dependências).
+    { key: 'visao', section: 'config', items: [
+      { href: '/prontidao', key: 'readiness', icon: Gauge },
     ] },
     { key: 'estrutura', section: 'config', items: [
-      { href: '/cadastros/paises',       key: 'countries',     icon: Globe },
-      { href: '/cadastros/cambio',       key: 'exchange',      icon: ArrowLeftRight },
-      { href: '/cadastros/unidades',     key: 'units',         icon: Warehouse },
-      { href: '/cadastros/centro-custo', key: 'costCenters',   icon: Wallet },
-      { href: '/cadastros/empresas',     key: 'companies',     icon: Building },
+      { href: '/cadastros/moedas',       key: 'currencies',  icon: CircleDollarSign },
+      { href: '/cadastros/plataformas',  key: 'platforms',   icon: Layers },
+      { href: '/cadastros/paises',       key: 'countries',   icon: Globe },
+      { href: '/cadastros/cambio',       key: 'exchange',    icon: ArrowLeftRight },
+      { href: '/cadastros/empresas',     key: 'companies',   icon: Building },
+      { href: '/cadastros/unidades',     key: 'units',       icon: Warehouse },
+      { href: '/cadastros/centro-custo', key: 'costCenters', icon: Wallet },
+    ] },
+    { key: 'classificacoes', section: 'config', items: [
+      { href: '/cadastros/categorias',    key: 'categories',    icon: Tags },
+      { href: '/cadastros/tipos',         key: 'supplierTypes', icon: Boxes },
+      { href: '/cadastros/solution-type', key: 'solutionTypes', icon: Cpu },
+      { href: '/cadastros/projetos',      key: 'projects',      icon: FolderKanban },
+      { href: '/cadastros/alocacao',      key: 'allocations',   icon: Share2 },
     ] },
     { key: 'fornecimento', section: 'config', items: [
-      { href: '/cadastros/fornecedores', key: 'suppliers',     icon: Truck },
-      { href: '/cadastros/contratos',    key: 'contracts',     icon: FileSignature },
-      // 'Despesas' (/cadastros/despesa) aposentado do menu — tabela `despesas` isolada.
+      { href: '/cadastros/fornecedores', key: 'suppliers', icon: Truck },
+      { href: '/cadastros/contratos',    key: 'contracts', icon: FileSignature },
     ] },
-    { key: 'admin', section: 'config', items: [
-      { href: '/cadastros/alocacao', key: 'allocations', icon: Share2 },
-      { href: '/admin/users',        key: 'users',       icon: Users },
+    { key: 'acesso', section: 'config', items: [
+      { href: '/admin/users', key: 'users', icon: Users },
     ] },
   ]
   const viewerGroups: NavGroup[] = [
