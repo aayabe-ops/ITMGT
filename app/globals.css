@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    @apply font-sans text-slate-700 antialiased;
+    background:
+      radial-gradient(1200px 600px at 100% -10%, rgba(15, 76, 129, 0.04), transparent 60%),
+      #f6f7f9;
+  }
+  h1, h2, h3 { @apply tracking-tight text-slate-900; text-wrap: balance; }
+  /* números alinhados em colunas por toda a app */
+  th, td, .nums { font-variant-numeric: tabular-nums; }
+}
+
+@layer components {
+  /* ── Container padrão de página (usa a largura, com respiro) ── */
+  .page        { @apply w-full max-w-[1360px] mx-auto px-5 md:px-8 py-6 md:py-8; }
+  .page-wide   { @apply w-full max-w-[1600px] mx-auto px-5 md:px-8 py-6 md:py-8; }
+  .page-head   { @apply flex items-start justify-between gap-4 flex-wrap mb-6; }
+  .page-title  { @apply text-[22px] leading-tight font-extrabold text-slate-900; }
+  .page-sub    { @apply text-sm text-slate-500 mt-0.5; }
+  .eyebrow     { @apply text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400; }
+  .section-title { @apply text-sm font-semibold text-slate-800; }
+
+  /* ── Inputs ── */
+  .input {
+    @apply block w-full rounded-lg border border-slate-200/90 bg-white px-3 py-2 text-sm text-slate-800
+           placeholder:text-slate-400 shadow-[0_1px_1px_rgba(16,24,40,0.03)]
+           focus:outline-none focus:ring-4 focus:ring-blue-500/15 focus:border-blue-500
+           disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed
+           transition;
+  }
+  .label { @apply block text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-1.5; }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-bordeaux px-4 py-2 text-sm font-semibold text-white
+           shadow-[0_1px_2px_rgba(146,34,62,0.35)] hover:bg-bordeaux-600 active:bg-bordeaux-700
+           disabled:opacity-50 disabled:cursor-not-allowed transition;
+  }
+  .btn-navy {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white
+           hover:bg-navy-700 active:bg-navy-900 disabled:opacity-50 disabled:cursor-not-allowed transition;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700
+           shadow-[0_1px_1px_rgba(16,24,40,0.03)] hover:bg-slate-50 hover:border-slate-300 active:bg-slate-100
+           disabled:opacity-50 disabled:cursor-not-allowed transition;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-500
+           hover:bg-slate-100 hover:text-slate-800 transition;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white
+           hover:bg-red-700 active:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed transition;
+  }
+
+  /* ── Cards ── */
+  .card {
+    @apply bg-white rounded-2xl border border-slate-200/70;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px -12px rgba(16, 24, 40, 0.08);
+  }
+  .card-hover { @apply transition; }
+  .card-hover:hover { box-shadow: 0 2px 4px rgba(16, 24, 40, 0.06), 0 16px 32px -14px rgba(16, 24, 40, 0.14); }
+
+  /* ── KPI / stat tile ── */
+  .stat   { @apply card p-4 md:p-5; }
+  .stat-l { @apply text-[11px] font-semibold uppercase tracking-wide text-slate-400; }
+  .stat-v { @apply mt-1 text-2xl md:text-[28px] leading-none font-extrabold text-slate-900; font-variant-numeric: tabular-nums; }
+
+  /* ── Tabelas padronizadas ──
+     .tbl é ADITIVO: unifica o visual do CABEÇALHO (cor/typo/fundo/padding) e o hover,
+     sem forçar alinhamento nem mexer nas células do corpo (cada td mantém seu
+     alinhamento/cor/padding). Assim pode ser aplicado em qualquer tabela sem regressão. */
+  .tbl        { @apply w-full text-sm border-collapse; }
+  .tbl thead th { @apply px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 bg-slate-50 border-b border-slate-100; }
+  .tbl tbody tr:hover td { @apply bg-slate-50; }
+  .table-wrap { @apply card overflow-hidden; }
+  .table-scroll { @apply overflow-x-auto; }
+
+  /* ── Badges ── */
+  .badge-base    { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold; }
+  .badge-green   { @apply badge-base bg-emerald-50 text-emerald-700; }
+  .badge-red     { @apply badge-base bg-red-50 text-red-700; }
+  .badge-yellow  { @apply badge-base bg-amber-50 text-amber-700; }
+  .badge-gray    { @apply badge-base bg-slate-100 text-slate-600; }
+  .badge-blue    { @apply badge-base bg-blue-50 text-blue-700; }
+  .badge-bordeaux{ @apply badge-base bg-bordeaux-50 text-bordeaux-700; }
+  .badge-navy    { @apply badge-base bg-navy-100 text-navy-800; }
+}
+
+/* ── Scrollbar discreta ── */
+* { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+*::-webkit-scrollbar { width: 9px; height: 9px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; border: 2px solid transparent; background-clip: content-box; }
+*::-webkit-scrollbar-thumb:hover { background: #94a3b8; background-clip: content-box; }

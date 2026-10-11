@@ -1,0 +1,17 @@
+# deps / build
+node_modules/
+.next/
+dist/
+build/
+
+# runtime / logs
+.pid
+*.log
+tsconfig.tsbuildinfo
+
+# segredos (NÃO versionar) — manter apenas o .example
+.env.local
+.env*.local
+
+# backups do banco (ficam locais, fora do git)
+backups/
