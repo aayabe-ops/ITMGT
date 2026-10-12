@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, canSeeReports } from '@/lib/auth'
 import pool from '@/lib/db'
 
 // Comprometido / Disponível por unidade:
@@ -8,7 +8,7 @@ import pool from '@/lib/db'
 //   cutoff = último mês fechado/realizado do ano (igual ao Forecast).
 // ?year= (obrigatório) &usd=1 (opcional)
 export async function GET(req: NextRequest) {
-  const u = getCurrentUser(); if (!u || u.role !== 'admin') return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const u = getCurrentUser(); if (!canSeeReports(u)) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   const sp = req.nextUrl.searchParams
   const year = parseInt(sp.get('year') || '') || new Date().getFullYear()
   const usd = sp.get('usd') === '1'

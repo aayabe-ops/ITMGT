@@ -24,8 +24,8 @@ export async function GET(req: NextRequest) {
   const category_id = sp.get('category_id') || null
   const supplier_id = sp.get('supplier_id') || null
 
-  // Escopo para não-admin
-  if (user.role !== 'admin') {
+  // Escopo para não-admin (Diretor = leitura global, sem imposição de escopo)
+  if (user.role !== 'admin' && user.role !== 'diretor') {
     const { rows: [sc] } = await pool.query('SELECT country_id, unit_id FROM public.users WHERE id=$1', [user.id])
     const mc = (await pool.query('SELECT country_id FROM public.user_countries WHERE user_id=$1', [user.id])).rows.map((r: any) => r.country_id)
     if (mc.length) { countryIds = mc; unit_id = null; country_id = null; company_id = null }

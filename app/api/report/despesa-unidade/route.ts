@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, canSeeReports } from '@/lib/auth'
 import pool from '@/lib/db'
 
 // Despesa por Unidade (showback): orçado, realizado direto e rateado por unidade.
 // ?year= (obrigatório) &month= (opcional: YTD até o mês; vazio = ano inteiro)
 export async function GET(req: NextRequest) {
-  const u = getCurrentUser(); if (!u || u.role !== 'admin') return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const u = getCurrentUser(); if (!canSeeReports(u)) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   const sp = req.nextUrl.searchParams
   const year = parseInt(sp.get('year') || '') || new Date().getFullYear()
   const month = parseInt(sp.get('month') || '') || 0   // 0 = ano inteiro

@@ -8,7 +8,7 @@ export interface AuthUser {
   id: string
   email: string
   full_name: string | null
-  role: 'admin' | 'lancador' | 'unit_viewer' | 'multi_country' | string
+  role: 'admin' | 'lancador' | 'diretor' | 'unit_viewer' | 'multi_country' | string
   unit_id: string | null
 }
 
@@ -16,6 +16,14 @@ export interface AuthUser {
 // Budget, Fechamento, Rateio, Cadastros e Usuários continuam SÓ admin.
 export const canLancar = (u?: { role?: string } | null): boolean =>
   !!u && (u.role === 'admin' || u.role === 'lancador')
+
+// Diretor = leitura GLOBAL (todos os países), sem escrever nada.
+// Vê dashboard e TODOS os relatórios executivos (Forecast, Disponível, etc.).
+export const canSeeReports = (u?: { role?: string } | null): boolean =>
+  !!u && (u.role === 'admin' || u.role === 'diretor')
+// Leitor global (sem imposição de escopo por país/unidade): admin ou diretor.
+export const isGlobalReader = (u?: { role?: string } | null): boolean =>
+  !!u && (u.role === 'admin' || u.role === 'diretor')
 
 export function signToken(user: AuthUser): string {
   return jwt.sign(user, SECRET, { expiresIn: '8h' })

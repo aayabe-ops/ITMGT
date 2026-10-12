@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, canSeeReports } from '@/lib/auth'
 import pool from '@/lib/db'
 
 // Correlação por SERVIÇO (fornecedor + categoria + unidade):
@@ -9,7 +9,7 @@ import pool from '@/lib/db'
 // Mesmo grão nas três pontas → o serviço do orçamento bate com o contrato e com o lançamento.
 // ?year= (obrigatório) &usd=1 (opcional) &unit_id= &unidade_id= &country_id=
 export async function GET(req: NextRequest) {
-  const u = getCurrentUser(); if (!u || u.role !== 'admin') return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const u = getCurrentUser(); if (!canSeeReports(u)) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   const sp = req.nextUrl.searchParams
   const year = parseInt(sp.get('year') || '') || new Date().getFullYear()
   const usd = sp.get('usd') === '1'

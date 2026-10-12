@@ -71,13 +71,37 @@ export default function Layout({ user, unit, children }: Props) {
       { href: '/admin/users', key: 'users', icon: Users },
     ] },
   ]
+  // Diretor: leitura global — dashboard + todos os relatórios (sem operação nem configuração).
+  const diretorGroups: NavGroup[] = [
+    { key: 'operacao', items: [
+      { href: '/', key: 'dashboard', icon: LayoutDashboard },
+    ] },
+    { key: 'relatorios', items: [
+      { href: '/report',                 key: 'reportHub',       icon: BarChart2 },
+      { href: '/report/analise',         key: 'report',          icon: LineChart },
+      { href: '/report/despesa-unidade', key: 'reportUnit',      icon: Warehouse },
+      { href: '/report/contratos',       key: 'reportContracts', icon: FileSignature },
+    ] },
+  ]
+  // Lançador: só o que opera (dashboard + Ordem de pagamento).
+  const lancadorGroups: NavGroup[] = [
+    { key: 'operacao', items: [
+      { href: '/',       key: 'dashboard', icon: LayoutDashboard },
+      { href: '/actual', key: 'actual',    icon: FileText },
+    ] },
+  ]
+  // Viewer País / Multi-País: leitura no seu escopo.
   const viewerGroups: NavGroup[] = [
     { key: 'operacao', items: [
       { href: '/',       key: 'dashboard', icon: LayoutDashboard },
       { href: '/actual', key: 'actual',    icon: FileText },
     ] },
   ]
-  const groups = user.role === 'admin' ? adminGroups : viewerGroups
+  // Menu adapta ao papel — mostra só o que o perfil pode abrir (esconder, não expulsar).
+  const groups = user.role === 'admin' ? adminGroups
+    : user.role === 'diretor' ? diretorGroups
+    : user.role === 'lancador' ? lancadorGroups
+    : viewerGroups
 
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
   useEffect(() => {

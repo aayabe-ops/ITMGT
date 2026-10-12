@@ -14,11 +14,12 @@ interface User {
 
 const ROLES = [
   { value: 'admin', label: 'Admin (tudo)' },
+  { value: 'diretor', label: 'Diretor (leitura global)' },
   { value: 'lancador', label: 'Lançador (só Ordem de pagamento)' },
   { value: 'unit_viewer', label: 'Viewer País' },
   { value: 'multi_country', label: 'Multi-País' },
 ]
-const roleBadge = (r: string) => r === 'admin' ? <span className="badge-yellow">Admin</span> : r === 'lancador' ? <span className="badge-blue">Lançador</span> : r === 'multi_country' ? <span className="badge-navy">Multi-País</span> : <span className="badge-gray">Viewer</span>
+const roleBadge = (r: string) => r === 'admin' ? <span className="badge-yellow">Admin</span> : r === 'diretor' ? <span className="text-[11px] px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 font-medium">Diretor</span> : r === 'lancador' ? <span className="badge-blue">Lançador</span> : r === 'multi_country' ? <span className="badge-navy">Multi-País</span> : <span className="badge-gray">Viewer</span>
 
 const empty = { id: '', email: '', full_name: '', password: '', role: 'unit_viewer', platform_id: '', country_id: '', unit_id: '', country_ids: [] as string[], is_active: true }
 

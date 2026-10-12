@@ -9,7 +9,7 @@ type Card = { href: string; title: string; desc: string; icon: any; tag?: string
 export default function ReportHubPage() {
   const user = getCurrentUser()
   if (!user) redirect('/login')
-  const admin = user.role === 'admin'
+  const admin = user.role === 'admin' || user.role === 'diretor'
 
   const cards: Card[] = [
     { href: '/report/analise', icon: BarChart2, title: 'Análise de Budget',
