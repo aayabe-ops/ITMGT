@@ -320,11 +320,11 @@ export default function RateioClient({ categories, suppliers, units, drivers, co
         <span className="eyebrow">Avançado (técnico) — regras, medidas compartilhadas, pesos e aplicação</span>
       </div>
       <div className="flex gap-1 mb-6 border-b border-slate-100 overflow-x-auto">
-        {(['criteria', 'bases', 'weights', 'apply', 'resumo'] as Tab[]).map(t => (
+        {(['criteria', 'bases', 'apply', 'resumo'] as Tab[]).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={clsx('px-4 py-2 text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap',
               tab === t ? 'bg-white border border-b-white border-slate-100 text-blue-600 -mb-px' : 'text-slate-500 hover:text-slate-700')}>
-            {t === 'criteria' ? 'Regras' : t === 'bases' ? 'Medida compartilhada' : t === 'weights' ? 'Pesos Manuais' : t === 'apply' ? 'Aplicação & Memória' : 'Resumo por unidade'}
+            {t === 'criteria' ? 'Regras' : t === 'bases' ? 'Medida compartilhada' : t === 'apply' ? 'Aplicar no budget' : 'Resumo por unidade'}
           </button>
         ))}
       </div>
@@ -445,7 +445,7 @@ export default function RateioClient({ categories, suppliers, units, drivers, co
                 <Plus className="w-4 h-4" /> {saving ? 'Salvando…' : form.id ? 'Atualizar regra' : 'Salvar'}
               </button>
             </div>
-            {selDriver?.kind === 'MANUAL' && <p className="mt-2 text-[11px] text-slate-400">Driver MANUAL: após salvar, informe os percentuais na aba <b>Pesos Manuais</b>.</p>}
+            {selDriver?.kind === 'MANUAL' && <p className="mt-2 text-[11px] text-slate-400">Para informar os percentuais, edite a premissa no <b>assistente (Nova premissa)</b>.</p>}
           </form>
 
           <div className="card overflow-hidden">
@@ -498,7 +498,7 @@ export default function RateioClient({ categories, suppliers, units, drivers, co
         <div className="card p-5">
           <div className="mb-3 text-xs text-slate-500 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2">
             Aqui aparecem só os drivers <b>por valor</b> ({drivers.filter(d => d.kind === 'VALUE').length}), que usam base numérica por CC.
-            <b> Percentual manual</b> → configure na aba <b>Pesos Manuais</b>. <b>Divisão igualitária</b> e <b>100% unidade específica</b> não usam base.
+            <b> Percentual manual</b> → informe os percentuais no <b>assistente (Nova premissa)</b>. <b>Divisão igualitária</b> e <b>100% unidade específica</b> não usam base.
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
             <div><label className="label">Driver (por valor)</label>
