@@ -12,7 +12,7 @@ async function resolveScope(user: any, sp: URLSearchParams) {
   let countryId = sp.get('country_id') || null
   let platformId = sp.get('platform_id') || null
   let countryIds: string[] | null = null
-  if (user.role !== 'admin' && user.role !== 'lancador') {
+  if (user.role !== 'admin' && user.role !== 'lancador' && user.role !== 'analista' && user.role !== 'gerente') {
     const { rows: [sc] } = await pool.query('SELECT platform_id, country_id, unit_id FROM public.users WHERE id=$1', [user.id])
     const mc = (await pool.query('SELECT country_id FROM public.user_countries WHERE user_id=$1', [user.id])).rows.map((r: any) => r.country_id)
     if (mc.length) { countryIds = mc; unitId = null; countryId = null; platformId = null }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, canManageBudget } from '@/lib/auth'
 import pool from '@/lib/db'
 
 // Espera: { rows: [{ unit_id, category_id, supplier_id?, project_id?, year?, month, value }], year? }
@@ -7,7 +7,7 @@ import pool from '@/lib/db'
 // (unit, category, supplier, project, year, month). supplier/project podem ser nulos.
 export async function POST(req: NextRequest) {
   const user = getCurrentUser()
-  if (!user || user.role !== 'admin') {
+  if (!canManageBudget(user)) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 

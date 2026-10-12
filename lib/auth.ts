@@ -8,14 +8,20 @@ export interface AuthUser {
   id: string
   email: string
   full_name: string | null
-  role: 'admin' | 'lancador' | 'diretor' | 'unit_viewer' | 'multi_country' | string
+  role: 'admin' | 'lancador' | 'diretor' | 'gerente' | 'analista' | 'unit_viewer' | 'multi_country' | string
   unit_id: string | null
 }
 
-// Permissão de LANÇAR realizado (Ordem de pagamento): admin ou lançador.
-// Budget, Fechamento, Rateio, Cadastros e Usuários continuam SÓ admin.
+// Capacidades por papel (poder cresce de cima para baixo; estrutura e usuários = só admin):
+//  - LANÇAR realizado (Ordem de pagamento): admin, lançador, analista, gerente.
+//  - FORNECIMENTO (cadastrar fornecedor/contrato + regras de rateio): admin, analista, gerente.
+//  - BUDGET (carregar orçamento) e FECHAMENTO: admin, gerente.
 export const canLancar = (u?: { role?: string } | null): boolean =>
-  !!u && (u.role === 'admin' || u.role === 'lancador')
+  !!u && (u.role === 'admin' || u.role === 'lancador' || u.role === 'analista' || u.role === 'gerente')
+export const canManageSupply = (u?: { role?: string } | null): boolean =>
+  !!u && (u.role === 'admin' || u.role === 'analista' || u.role === 'gerente')
+export const canManageBudget = (u?: { role?: string } | null): boolean =>
+  !!u && (u.role === 'admin' || u.role === 'gerente')
 
 // Diretor = leitura GLOBAL (todos os países), sem escrever nada.
 // Vê dashboard e TODOS os relatórios executivos (Forecast, Disponível, etc.).

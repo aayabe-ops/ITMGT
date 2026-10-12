@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, canManageBudget } from '@/lib/auth'
 import pool from '@/lib/db'
 import { applyRateioActual } from '@/lib/rateioEngine'
 
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
 // POST { year, month, close:true|false } — Fechar o mês (reprocessa o rateio do realizado
 // e TRAVA o período) ou Reabrir (destrava). O reprocesso roda ANTES da trava.
 export async function POST(req: NextRequest) {
-  const user = getCurrentUser(); if (!user || user.role !== 'admin') return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const user = getCurrentUser(); if (!canManageBudget(user)) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   const b: any = await req.json().catch(() => ({}))
   const year = parseInt(b.year), month = parseInt(b.month)
   if (!(year > 0) || !(month >= 1 && month <= 12)) return NextResponse.json({ error: 'Ano/mês inválidos.' }, { status: 400 })

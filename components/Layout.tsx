@@ -97,9 +97,40 @@ export default function Layout({ user, unit, children }: Props) {
       { href: '/actual', key: 'actual',    icon: FileText },
     ] },
   ]
+  // Analista: lançar realizado + cadastrar fornecimento (fornecedor/contrato/rateio) — sem budget nem estrutura.
+  const fornecimentoItems: NavLink[] = [
+    { href: '/cadastros/fornecedores', key: 'suppliers', icon: Truck },
+    { href: '/cadastros/contratos',    key: 'contracts', icon: FileSignature },
+    { href: '/rateio',                 key: 'rateio',    icon: Settings2 },
+  ]
+  const relatoriosBasic: NavLink[] = [
+    { href: '/report',         key: 'reportHub', icon: BarChart2 },
+    { href: '/report/analise', key: 'report',    icon: LineChart },
+  ]
+  const analistaGroups: NavGroup[] = [
+    { key: 'operacao', items: [
+      { href: '/',       key: 'dashboard', icon: LayoutDashboard },
+      { href: '/actual', key: 'actual',    icon: FileText },
+    ] },
+    { key: 'fornecimento', items: fornecimentoItems },
+    { key: 'relatorios', items: relatoriosBasic },
+  ]
+  // Gerente: Analista + budget + fechamento.
+  const gerenteGroups: NavGroup[] = [
+    { key: 'operacao', items: [
+      { href: '/',              key: 'dashboard', icon: LayoutDashboard },
+      { href: '/budget/upload', key: 'budget',    icon: Upload },
+      { href: '/actual',        key: 'actual',    icon: FileText },
+      { href: '/closing',       key: 'closing',   icon: ClipboardCheck },
+    ] },
+    { key: 'fornecimento', items: fornecimentoItems },
+    { key: 'relatorios', items: relatoriosBasic },
+  ]
   // Menu adapta ao papel — mostra só o que o perfil pode abrir (esconder, não expulsar).
   const groups = user.role === 'admin' ? adminGroups
     : user.role === 'diretor' ? diretorGroups
+    : user.role === 'gerente' ? gerenteGroups
+    : user.role === 'analista' ? analistaGroups
     : user.role === 'lancador' ? lancadorGroups
     : viewerGroups
 

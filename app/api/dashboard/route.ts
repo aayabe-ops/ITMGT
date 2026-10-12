@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
 
   // Imposição de escopo para não-admin: unidade > multi-país > país > plataforma > (sem escopo = nada).
   // Admin (ou usuário sem restrição) vê o acumulado de todas as plataformas.
-  if (user.role !== 'admin' && user.role !== 'lancador' && user.role !== 'diretor') {
+  if (user.role !== 'admin' && user.role !== 'lancador' && user.role !== 'diretor' && user.role !== 'analista' && user.role !== 'gerente') {
     const { rows: [sc] } = await pool.query('SELECT platform_id, country_id, unit_id FROM public.users WHERE id=$1', [user.id])
     const mc = (await pool.query('SELECT country_id FROM public.user_countries WHERE user_id=$1', [user.id])).rows.map((r: any) => r.country_id)
     if (mc.length) { countryIds = mc; unitId = null; countryId = null; platformId = null }

@@ -159,7 +159,7 @@ export default function ActualClient({ user, units, categories, suppliers, count
   const totalRateado = rows.filter(r => r.origin === 'RATEADO_ADM').reduce((s, r) => s + Number(r.amount || 0), 0)
   const totalGeral = rows.reduce((s, r) => s + Number(r.amount || 0), 0)
   const isAdmin = user.role === 'admin'
-  const canLancar = isAdmin || user.role === 'lancador'   // lançador pode lançar/editar realizado (não configura rateio)
+  const canLancar = isAdmin || ['lancador', 'analista', 'gerente'].includes(user.role)   // podem lançar/editar realizado
 
   const sel = (v: string, set: (s: string) => void, opts: any[], ph: string, w: string, dis = false, lbl = (o: any) => o.name) => (
     <select className={clsx('input text-sm', w)} value={v} disabled={dis} onChange={e => set(e.target.value)}>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, canManageSupply } from '@/lib/auth'
 import pool from '@/lib/db'
 
 const noauth = () => NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
@@ -8,7 +8,7 @@ const noauth = () => NextResponse.json({ error: 'Não autorizado' }, { status: 4
 // driver (allocation_drivers), vigência, status e unidades participantes.
 export async function GET() {
   const user = getCurrentUser()
-  if (!user || user.role !== 'admin') return noauth()
+  if (!canManageSupply(user)) return noauth()
 
   const { rows } = await pool.query(`
     SELECT rc.id, rc.supplier_id, rc.contract_id, rc.category_id, rc.country_id, rc.driver_id,
@@ -43,7 +43,7 @@ export async function GET() {
 // PUT — edita uma regra existente (todos os campos + unidades participantes).
 export async function PUT(req: NextRequest) {
   const user = getCurrentUser()
-  if (!user || user.role !== 'admin') return noauth()
+  if (!canManageSupply(user)) return noauth()
   const body: any = await req.json().catch(() => null)
   if (!body?.id) return NextResponse.json({ error: 'ID da regra é obrigatório.' }, { status: 400 })
   const { id, supplier_id, contract_id, category_id, country_id, driver_id,
@@ -90,7 +90,7 @@ export async function PUT(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const user = getCurrentUser()
-  if (!user || user.role !== 'admin') return noauth()
+  if (!canManageSupply(user)) return noauth()
   const body: any = await req.json().catch(() => null)
   if (!body) return NextResponse.json({ error: 'Corpo inválido' }, { status: 400 })
 

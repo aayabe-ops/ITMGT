@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, canManageSupply } from '@/lib/auth'
 import { applyRateioActual, applyRateioBudget } from '@/lib/rateioEngine'
 
 // Aplica rateio: scenario = 'ACTUAL' (Realizado do mês), 'BUDGET' (budget do ano) ou 'BOTH'.
 export async function POST(req: NextRequest) {
-  const user = getCurrentUser(); if (!user || user.role !== 'admin') return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const user = getCurrentUser(); if (!canManageSupply(user)) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   const b: any = await req.json().catch(() => ({}))
   const year = parseInt(b.year), month = parseInt(b.month)
   const scenario = b.scenario === 'BUDGET' ? 'BUDGET' : b.scenario === 'BOTH' ? 'BOTH' : 'ACTUAL'

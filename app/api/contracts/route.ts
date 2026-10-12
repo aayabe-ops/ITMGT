@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, canManageSupply } from '@/lib/auth'
 import pool from '@/lib/db'
 
 const noauth = () => NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
@@ -29,7 +29,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const u = getCurrentUser(); if (!u || u.role !== 'admin') return noauth()
+  const u = getCurrentUser(); if (!canManageSupply(u)) return noauth()
   const b: any = await req.json().catch(() => null)
   if (!b?.name?.trim()) return NextResponse.json({ error: 'Nome é obrigatório.' }, { status: 400 })
   const cols: string[] = [], ph: string[] = [], vals: any[] = []
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const u = getCurrentUser(); if (!u || u.role !== 'admin') return noauth()
+  const u = getCurrentUser(); if (!canManageSupply(u)) return noauth()
   const b: any = await req.json().catch(() => null)
   if (!b?.id) return NextResponse.json({ error: 'id obrigatório' }, { status: 400 })
   const sets: string[] = [], vals: any[] = []
@@ -56,7 +56,7 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const u = getCurrentUser(); if (!u || u.role !== 'admin') return noauth()
+  const u = getCurrentUser(); if (!canManageSupply(u)) return noauth()
   const b: any = await req.json().catch(() => null)
   if (!b?.id) return NextResponse.json({ error: 'id obrigatório' }, { status: 400 })
   try {

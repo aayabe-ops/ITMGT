@@ -1,4 +1,4 @@
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, canManageSupply } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import pool from '@/lib/db'
 import Layout from '@/components/Layout'
@@ -7,7 +7,7 @@ import RateioClient from './RateioClient'
 export default async function RateioPage() {
   const user = getCurrentUser()
   if (!user) redirect('/login')
-  if (user.role !== 'admin') redirect('/')
+  if (!canManageSupply(user)) redirect('/')
 
   const [categories, suppliers, units, drivers, contracts, countries] = await Promise.all([
     pool.query('SELECT id, code, name FROM public.categories WHERE is_active=true ORDER BY name'),

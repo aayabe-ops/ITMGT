@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, canManageSupply } from '@/lib/auth'
 import pool from '@/lib/db'
 
 const noauth = () => NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
@@ -7,7 +7,7 @@ const noauth = () => NextResponse.json({ error: 'Não autorizado' }, { status: 4
 // GET ?driver_id=&year=&month=&scenario= → valores da base por unidade (um mês, com herança)
 // GET ?driver_id=&year=&scenario=&all=1  → TODOS os meses (matriz): rows:[{unit_id, month, value}]
 export async function GET(req: NextRequest) {
-  const user = getCurrentUser(); if (!user || user.role !== 'admin') return noauth()
+  const user = getCurrentUser(); if (!canManageSupply(user)) return noauth()
   const sp = req.nextUrl.searchParams
   const driver_id = sp.get('driver_id'); const year = sp.get('year'); const month = sp.get('month')
   const scenario = sp.get('scenario') === 'BUDGET' ? 'BUDGET' : 'ACTUAL'
@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
 // POST { driver_id, year, scenario, month?, values:[{unit_id, value, month?}] } → upsert em lote.
 // month pode vir por item (matriz de 12 meses) ou no topo (compat. 1 mês). Valor 0/vazio apaga.
 export async function POST(req: NextRequest) {
-  const user = getCurrentUser(); if (!user || user.role !== 'admin') return noauth()
+  const user = getCurrentUser(); if (!canManageSupply(user)) return noauth()
   const b: any = await req.json().catch(() => null)
   if (!b?.driver_id || !b?.year || !Array.isArray(b?.values)) {
     return NextResponse.json({ error: 'driver_id, year e values são obrigatórios.' }, { status: 400 })

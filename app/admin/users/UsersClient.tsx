@@ -15,11 +15,21 @@ interface User {
 const ROLES = [
   { value: 'admin', label: 'Admin (tudo)' },
   { value: 'diretor', label: 'Diretor (leitura global)' },
+  { value: 'gerente', label: 'Gerente (fornecimento + budget + fechamento)' },
+  { value: 'analista', label: 'Analista (fornecimento + lançar)' },
   { value: 'lancador', label: 'Lançador (só Ordem de pagamento)' },
   { value: 'unit_viewer', label: 'Viewer País' },
   { value: 'multi_country', label: 'Multi-País' },
 ]
-const roleBadge = (r: string) => r === 'admin' ? <span className="badge-yellow">Admin</span> : r === 'diretor' ? <span className="text-[11px] px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 font-medium">Diretor</span> : r === 'lancador' ? <span className="badge-blue">Lançador</span> : r === 'multi_country' ? <span className="badge-navy">Multi-País</span> : <span className="badge-gray">Viewer</span>
+const chip = (cls: string, txt: string) => <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${cls}`}>{txt}</span>
+const roleBadge = (r: string) =>
+  r === 'admin' ? <span className="badge-yellow">Admin</span>
+  : r === 'diretor' ? chip('bg-violet-50 text-violet-700', 'Diretor')
+  : r === 'gerente' ? chip('bg-teal-50 text-teal-700', 'Gerente')
+  : r === 'analista' ? chip('bg-sky-50 text-sky-700', 'Analista')
+  : r === 'lancador' ? <span className="badge-blue">Lançador</span>
+  : r === 'multi_country' ? <span className="badge-navy">Multi-País</span>
+  : <span className="badge-gray">Viewer</span>
 
 const empty = { id: '', email: '', full_name: '', password: '', role: 'unit_viewer', platform_id: '', country_id: '', unit_id: '', country_ids: [] as string[], is_active: true }
 
