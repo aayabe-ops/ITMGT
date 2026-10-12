@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { CheckCircle2, AlertTriangle, XCircle, ArrowRight, RefreshCw, ClipboardCheck, Settings2 } from 'lucide-react'
+import { CheckCircle2, AlertTriangle, XCircle, ArrowRight, RefreshCw, ClipboardCheck, Settings2, Rocket } from 'lucide-react'
 
 type Ready = {
   currencies: number; platforms: number; countries: number; exchange: number
@@ -89,9 +89,14 @@ export default function ProntidaoClient() {
           </h1>
           <p className="text-sm text-slate-500">O que já está cadastrado e o que falta para <b>orçar</b> e para <b>ratear</b>.</p>
         </div>
-        <button onClick={load} className="btn-secondary text-sm flex items-center gap-1.5">
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Atualizar
-        </button>
+        <div className="flex items-center gap-2">
+          <Link href="/cadastros/setup" className="btn-primary text-sm flex items-center gap-1.5">
+            <Rocket className="w-4 h-4" /> Configuração guiada
+          </Link>
+          <button onClick={load} className="btn-secondary text-sm flex items-center gap-1.5">
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Atualizar
+          </button>
+        </div>
       </div>
 
       {err && (
