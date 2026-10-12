@@ -58,8 +58,8 @@ export default function ExcecoesClient() {
       <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
         <div>
           <Link href="/rateio" className="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1 mb-1"><ArrowLeft className="w-3 h-3" /> Rateio</Link>
-          <h1 className="page-title flex items-center gap-2"><SlidersHorizontal className="w-5 h-5 text-bordeaux-600" /> Exceções do Realizado</h1>
-          <p className="text-sm text-slate-500 max-w-2xl">Despesas realizadas <b>direto</b> (sem regra de rateio que case). As marcadas <b>Fora do budget</b> são gastos que não estavam planejados — decida: criar uma regra de rateio ou aceitar como despesa direta.</p>
+          <h1 className="page-title flex items-center gap-2"><SlidersHorizontal className="w-5 h-5 text-bordeaux-600" /> Custos sem premissa de rateio</h1>
+          <p className="text-sm text-slate-500 max-w-2xl">Despesas realizadas <b>direto</b> (sem premissa de rateio que case). As marcadas <b>Fora do budget</b> são gastos que não estavam planejados — decida: criar uma premissa de rateio ou aceitar como despesa direta.</p>
         </div>
         <div className="flex items-end gap-2 flex-wrap">
           <div><label className="label">Ano</label>

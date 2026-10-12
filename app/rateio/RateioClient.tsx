@@ -275,11 +275,11 @@ export default function RateioClient({ categories, suppliers, units, drivers, co
       <div className="page-head">
         <div>
           <h1 className="page-title">Rateio</h1>
-          <p className="page-sub">Distribua custos corporativos pelos centros de custo em poucos passos.</p>
+          <p className="page-sub">Defina a <b>premissa</b> de cada serviço — uma vez por ano. Ela congela e o realizado segue sozinho.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/rateio/drivers" className="btn-secondary flex items-center gap-1.5"><Gauge className="w-4 h-4" /> Drivers</Link>
-          <Link href="/rateio/excecoes" className="btn-secondary flex items-center gap-1.5"><SlidersHorizontal className="w-4 h-4" /> Exceções</Link>
+          <Link href="/rateio/excecoes" className="btn-secondary flex items-center gap-1.5"><SlidersHorizontal className="w-4 h-4" /> Custos sem premissa</Link>
+          <Link href="/rateio/drivers" className="btn-secondary flex items-center gap-1.5" title="Avançado — métricas reutilizáveis (headcount, nº de máquinas, horas)"><Gauge className="w-4 h-4" /> Medidas compartilhadas</Link>
           <Link href="/rateio/import" className="btn-secondary flex items-center gap-1.5"><FileSpreadsheet className="w-4 h-4" /> Importar Excel</Link>
           <button onClick={load} className="btn-secondary" disabled={loading}><RefreshCw className={clsx('w-4 h-4', loading && 'animate-spin')} /></button>
         </div>
@@ -289,8 +289,8 @@ export default function RateioClient({ categories, suppliers, units, drivers, co
       <div className="card p-4 md:p-5 mb-6 bg-gradient-to-br from-navy-800 to-navy-900 border-0">
         <div className="flex items-center justify-between gap-6 flex-wrap">
           <div className="min-w-0">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-blue-200/90">Assistente de Rateio</div>
-            <h2 className="text-xl font-bold mt-1 text-white">Crie um rateio em 5 passos guiados</h2>
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-blue-200/90">Premissa de rateio</div>
+            <h2 className="text-xl font-bold mt-1 text-white">Defina como um serviço se divide — vale o ano todo</h2>
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-3 text-[12px] text-slate-200">
               {['O quê', 'Como', 'Quem', 'Confira', 'Aplique'].map((s, i) => (
                 <span key={s} className="inline-flex items-center gap-2">
@@ -301,7 +301,7 @@ export default function RateioClient({ categories, suppliers, units, drivers, co
             </div>
           </div>
           <button onClick={() => { setEditRule(null); setShowWizard(true) }} className="shrink-0 inline-flex items-center gap-2 rounded-lg bg-bordeaux-600 text-white px-6 py-3 text-base font-semibold hover:bg-bordeaux-700 transition-colors shadow-lg shadow-bordeaux-900/30 ring-1 ring-white/10">
-            <Sparkles className="w-5 h-5" /> Novo rateio
+            <Sparkles className="w-5 h-5" /> Nova premissa
           </button>
         </div>
       </div>
@@ -317,14 +317,14 @@ export default function RateioClient({ categories, suppliers, units, drivers, co
       )}
 
       <div className="flex items-center justify-between mb-2">
-        <span className="eyebrow">Avançado — gerenciar regras, bases, pesos e aplicação</span>
+        <span className="eyebrow">Avançado (técnico) — regras, medidas compartilhadas, pesos e aplicação</span>
       </div>
       <div className="flex gap-1 mb-6 border-b border-slate-100 overflow-x-auto">
         {(['criteria', 'bases', 'weights', 'apply', 'resumo'] as Tab[]).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={clsx('px-4 py-2 text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap',
               tab === t ? 'bg-white border border-b-white border-slate-100 text-blue-600 -mb-px' : 'text-slate-500 hover:text-slate-700')}>
-            {t === 'criteria' ? 'Regras' : t === 'bases' ? 'Bases dos Drivers' : t === 'weights' ? 'Pesos Manuais' : t === 'apply' ? 'Aplicação & Memória' : 'Resumo por unidade'}
+            {t === 'criteria' ? 'Regras' : t === 'bases' ? 'Medida compartilhada' : t === 'weights' ? 'Pesos Manuais' : t === 'apply' ? 'Aplicação & Memória' : 'Resumo por unidade'}
           </button>
         ))}
       </div>
