@@ -1,7 +1,7 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { X, ArrowLeft, ArrowRight, Check, Share2, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { X, ArrowLeft, ArrowRight, Check, Share2, CheckCircle2, AlertTriangle, Plus } from 'lucide-react'
 import clsx from 'clsx'
 
 interface Opt { id: string; name: string; code?: string }
@@ -11,6 +11,13 @@ type Props = {
 }
 
 const STEPS = ['Identificação', 'Serviço', 'Como rateia', 'Contrato', 'Revisar']
+const DRAFT_KEY = 'supplier_wizard_draft'
+const EMPTY_FORM = {
+  name: '', short_name: '', supplier_type_id: '', country_ids: [] as string[],
+  category_id: '', cost_class: 'OPEX', solution_type_id: '', project_id: '',
+  expense_mode: 'DIRETO', unit_id: '',
+  contract_start: '', contract_end: '', payment_due_date: '', monthly_value: '', currency_id: '',
+}
 
 // Nível de módulo (identidade estável) — se fosse definido dentro do componente,
 // os inputs perderiam o foco a cada tecla.
@@ -24,17 +31,38 @@ function Field({ label, children, hint }: { label: string; children: React.React
   )
 }
 
+// "Criar pré-requisito no fluxo": quando falta um cadastro-base, orienta sem travar.
+function PrereqNote({ what, href }: { what: string; href: string }) {
+  return (
+    <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-xs text-amber-800 flex items-center justify-between gap-2">
+      <span className="flex items-center gap-1.5"><AlertTriangle className="w-4 h-4 shrink-0" /> Nenhum(a) {what} cadastrado(a) ainda.</span>
+      <Link href={href} className="font-medium text-amber-900 hover:underline inline-flex items-center gap-1 shrink-0">
+        <Plus className="w-3.5 h-3.5" /> Criar {what}
+      </Link>
+    </div>
+  )
+}
+
 export default function SupplierWizard({ types, categories, projects, units, countries, solutionTypes, currencies, onClose, onDone }: Props) {
   const [step, setStep] = useState(1)
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
   const [doneId, setDoneId] = useState<string | null>(null)
-  const [f, setF] = useState({
-    name: '', short_name: '', supplier_type_id: '', country_ids: [] as string[],
-    category_id: '', cost_class: 'OPEX', solution_type_id: '', project_id: '',
-    expense_mode: 'DIRETO', unit_id: '',
-    contract_start: '', contract_end: '', payment_due_date: '', monthly_value: '', currency_id: '',
-  })
+  const [restored, setRestored] = useState(false)
+  const [f, setF] = useState({ ...EMPTY_FORM })
+
+  // Rascunho: restaura ao abrir, salva a cada mudança, limpa ao concluir.
+  useEffect(() => {
+    try { const s = localStorage.getItem(DRAFT_KEY); if (s) { const j = JSON.parse(s); if (j?.f && typeof j.f.name === 'string' && (j.f.name || j.step > 1)) { setF({ ...EMPTY_FORM, ...j.f }); setStep(Math.min(5, Math.max(1, j.step || 1))); setRestored(true) } } } catch {}
+  }, [])
+  useEffect(() => {
+    if (doneId) return
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ f, step })) } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [f, step])
+  const clearDraft = () => { try { localStorage.removeItem(DRAFT_KEY) } catch {} }
+  const fromScratch = () => { clearDraft(); setF({ ...EMPTY_FORM }); setStep(1); setRestored(false) }
+
   const set = (k: string, v: any) => setF(p => ({ ...p, [k]: v }))
   const toggleCountry = (id: string) => setF(p => ({ ...p, country_ids: p.country_ids.includes(id) ? p.country_ids.filter(x => x !== id) : [...p.country_ids, id] }))
 
@@ -97,6 +125,7 @@ export default function SupplierWizard({ types, categories, projects, units, cou
           }).catch(() => {})
         }
       }
+      clearDraft()
       setDoneId(supplierId)
     } catch (e: any) { setErr(e?.message || 'Erro ao salvar.') }
     setSaving(false)
@@ -146,12 +175,18 @@ export default function SupplierWizard({ types, categories, projects, units, cou
                 </div>
               )}
               <div className="flex justify-center gap-2 mt-6">
-                <button onClick={() => { setDoneId(null); setStep(1); setF({ name: '', short_name: '', supplier_type_id: '', country_ids: [], category_id: '', cost_class: 'OPEX', solution_type_id: '', project_id: '', expense_mode: 'DIRETO', unit_id: '', contract_start: '', contract_end: '', payment_due_date: '', monthly_value: '', currency_id: '' }) }} className="btn-secondary text-sm">Cadastrar outro</button>
+                <button onClick={() => { setDoneId(null); setStep(1); setF({ ...EMPTY_FORM }); clearDraft() }} className="btn-secondary text-sm">Cadastrar outro</button>
                 <button onClick={onDone} className="btn-primary text-sm">Concluir</button>
               </div>
             </div>
           ) : (
             <>
+              {restored && (
+                <div className="mb-4 rounded-lg bg-blue-50 border border-blue-100 px-3 py-2 text-xs text-blue-700 flex items-center justify-between gap-2">
+                  <span>Rascunho restaurado — continue de onde parou.</span>
+                  <button onClick={fromScratch} className="font-medium hover:underline shrink-0">Começar do zero</button>
+                </div>
+              )}
               {/* Passo 1 — Identificação */}
               {step === 1 && (
                 <div className="space-y-4">
@@ -182,6 +217,7 @@ export default function SupplierWizard({ types, categories, projects, units, cou
               {/* Passo 2 — Classificação do serviço */}
               {step === 2 && (
                 <div className="space-y-4">
+                  {categories.length === 0 && <PrereqNote what="categoria" href="/cadastros/categorias" />}
                   <Field label="Categoria (serviço) *" hint="a categoria define o serviço; budget e realizado herdam dela">
                     <select className="input" value={f.category_id} onChange={e => set('category_id', e.target.value)}>
                       <option value="">Selecione…</option>{categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -224,11 +260,13 @@ export default function SupplierWizard({ types, categories, projects, units, cou
                     ))}
                   </div>
                   {!isRateio ? (
+                    units.length === 0 ? <PrereqNote what="centro de custo" href="/cadastros/centro-custo" /> : (
                     <Field label="Centro de Custo *" hint="onde a despesa direta será lançada">
                       <select className="input" value={f.unit_id} onChange={e => set('unit_id', e.target.value)}>
                         <option value="">Selecione…</option>{units.map(u => <option key={u.id} value={u.id}>{u.code} — {u.name}</option>)}
                       </select>
                     </Field>
+                    )
                   ) : (
                     <div className="rounded-xl border border-violet-200 bg-violet-50/60 p-3 text-xs text-violet-700 flex items-start gap-2">
                       <Share2 className="w-4 h-4 shrink-0 mt-0.5" />
