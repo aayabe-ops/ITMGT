@@ -1,9 +1,10 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Trash2, Pencil, X, Upload, Download, Search } from 'lucide-react'
+import { Plus, Trash2, Pencil, X, Upload, Download, Search, Wand2 } from 'lucide-react'
 import clsx from 'clsx'
 import { csvDownload, norm, readTable } from '@/lib/csv'
 import GuideCard from '@/components/GuideCard'
+import SupplierWizard from './SupplierWizard'
 
 interface Opt { id: string; name: string; code?: string }
 interface Supplier {
@@ -23,9 +24,10 @@ const empty = {
   contract_start: '', contract_end: '', payment_due_date: '', ga_group_id: '', cost_center_id: '', solution_type_id: '',
 }
 
-export default function SuppliersClient({ types, categories, projects, units, countries, gaGroups, costCenters, solutionTypes }: {
-  types: Opt[]; categories: Opt[]; projects: Opt[]; units: Opt[]; countries: Opt[]; gaGroups: Opt[]; costCenters: Opt[]; solutionTypes: Opt[]
+export default function SuppliersClient({ types, categories, projects, units, countries, gaGroups, costCenters, solutionTypes, currencies = [] }: {
+  types: Opt[]; categories: Opt[]; projects: Opt[]; units: Opt[]; countries: Opt[]; gaGroups: Opt[]; costCenters: Opt[]; solutionTypes: Opt[]; currencies?: Opt[]
 }) {
+  const [wizard, setWizard] = useState(false)
   const [list, setList] = useState<Supplier[]>([])
   const [q, setQ] = useState('')
   const nq = (s: any) => String(s ?? '').toLowerCase()
@@ -138,6 +140,9 @@ export default function SuppliersClient({ types, categories, projects, units, co
           <p className="text-sm text-slate-500">Cadastro com tipo, categoria, rateio/direto, CAPEX·OPEX·OTC e projeto</p>
         </div>
         <div className="flex items-center gap-2">
+          <button type="button" onClick={() => setWizard(true)} className="btn-primary text-sm flex items-center gap-1.5">
+            <Wand2 className="w-4 h-4" /> Novo fornecedor (guiado)
+          </button>
           <button type="button" onClick={downloadTemplate} className="btn-secondary text-sm flex items-center gap-1.5">
             <Download className="w-4 h-4" /> Modelo CSV
           </button>
@@ -147,6 +152,12 @@ export default function SuppliersClient({ types, categories, projects, units, co
           </label>
         </div>
       </div>
+
+      {wizard && (
+        <SupplierWizard types={types} categories={categories} projects={projects} units={units}
+          countries={countries} solutionTypes={solutionTypes} currencies={currencies}
+          onClose={() => setWizard(false)} onDone={() => { setWizard(false); load() }} />
+      )}
 
       <GuideCard storageKey="/cadastros/fornecedores"
         steps={[

@@ -9,7 +9,7 @@ export default async function Page() {
   if (!user) redirect('/login')
   if (user.role !== 'admin') redirect('/')
 
-  const [types, cats, projs, units, countries, gaGroups, costCenters, solutionTypes] = await Promise.all([
+  const [types, cats, projs, units, countries, gaGroups, costCenters, solutionTypes, currencies] = await Promise.all([
     pool.query('SELECT id, name FROM public.supplier_types WHERE is_active=true ORDER BY name'),
     pool.query('SELECT id, name FROM public.categories WHERE is_active=true ORDER BY name'),
     pool.query('SELECT id, code, name FROM public.projects WHERE is_active=true ORDER BY name'),
@@ -18,12 +18,14 @@ export default async function Page() {
     pool.query('SELECT id, name FROM public.ga_groups WHERE is_active=true ORDER BY name'),
     pool.query('SELECT id, code, name FROM public.cost_centers WHERE is_active=true ORDER BY name'),
     pool.query('SELECT id, name FROM public.solution_types WHERE is_active=true ORDER BY name'),
+    pool.query('SELECT id, code, name FROM public.currencies WHERE is_active=true ORDER BY code'),
   ])
 
   return (
     <Layout user={user}>
       <SuppliersClient types={types.rows} categories={cats.rows} projects={projs.rows} units={units.rows}
-        countries={countries.rows} gaGroups={gaGroups.rows} costCenters={costCenters.rows} solutionTypes={solutionTypes.rows} />
+        countries={countries.rows} gaGroups={gaGroups.rows} costCenters={costCenters.rows} solutionTypes={solutionTypes.rows}
+        currencies={currencies.rows} />
     </Layout>
   )
 }
