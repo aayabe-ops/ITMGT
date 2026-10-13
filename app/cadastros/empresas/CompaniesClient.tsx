@@ -152,7 +152,7 @@ export default function CompaniesClient({ countries, costCenters, unidades }: { 
               <th className="text-center px-3 py-2.5 font-medium">CCs</th><th className="px-3 py-2.5" />
             </tr></thead>
             <tbody className="divide-y divide-slate-50">
-              {shown.length === 0 && <tr><td colSpan={8} className="px-4 py-8 text-center text-slate-400">{q.trim() ? 'Nada encontrado' : 'Nenhuma empresa'}</td></tr>}
+              {shown.length === 0 && <tr><td colSpan={8} className="px-4 py-8 text-center">{q.trim() ? <span className="text-slate-400">Nada encontrado</span> : <div className="text-slate-500 max-w-md mx-auto"><p className="font-semibold text-slate-700">Você ainda não tem empresas</p><p className="text-sm mt-1">A empresa é a entidade legal do grupo. O centro de custo referencia uma empresa. Ex.: Emergent Cold Brasil Ltda.</p><p className="text-xs text-slate-400 mt-2">Cadastre a primeira no formulário acima.</p></div>}</td></tr>}
               {shown.map(c => (
                 <tr key={c.id} className="hover:bg-slate-50">
                   <td className="px-3 py-2 font-mono text-xs text-slate-600">{c.code}</td>

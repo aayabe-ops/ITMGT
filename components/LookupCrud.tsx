@@ -8,9 +8,10 @@ import GuideCard from '@/components/GuideCard'
 interface Item { id: string; code: string; name: string; description?: string | null; is_active: boolean;[k: string]: any }
 type ExtraField = { key: string; label: string; options: { value: string; label: string }[] }
 
-export default function LookupCrud({ endpoint, title, subtitle, hasDescription = false, guideSteps, guideNote, extraFields = [] }: {
+export default function LookupCrud({ endpoint, title, subtitle, hasDescription = false, guideSteps, guideNote, extraFields = [], teach }: {
   endpoint: string; title: string; subtitle?: string; hasDescription?: boolean
   guideSteps?: string[]; guideNote?: string; extraFields?: ExtraField[]
+  teach?: { what: string; example?: string }
 }) {
   const [items, setItems] = useState<Item[]>([])
   const [code, setCode] = useState('')
@@ -243,7 +244,16 @@ export default function LookupCrud({ endpoint, title, subtitle, hasDescription =
           </thead>
           <tbody className="divide-y divide-slate-50">
             {shown.length === 0 && (
-              <tr><td colSpan={4 + (hasDescription ? 1 : 0) + extraFields.length} className="px-4 py-8 text-center text-slate-400">{q.trim() ? 'Nada encontrado para a busca' : 'Nenhum registro'}</td></tr>
+              <tr><td colSpan={4 + (hasDescription ? 1 : 0) + extraFields.length} className="px-4 py-8 text-center">
+                {q.trim() ? <span className="text-slate-400">Nada encontrado para a busca</span>
+                  : teach ? (
+                    <div className="text-slate-500 max-w-md mx-auto">
+                      <p className="font-semibold text-slate-700">Você ainda não tem {teach.what}</p>
+                      {teach.example && <p className="text-sm mt-1">{teach.example}</p>}
+                      <p className="text-xs text-slate-400 mt-2">Cadastre o primeiro no formulário acima.</p>
+                    </div>
+                  ) : <span className="text-slate-400">Nenhum registro</span>}
+              </td></tr>
             )}
             {shown.map(it => (
               <tr key={it.id} className={clsx('hover:bg-slate-50', !it.is_active && 'opacity-50')}>

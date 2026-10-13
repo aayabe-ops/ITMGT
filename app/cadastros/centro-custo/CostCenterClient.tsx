@@ -239,7 +239,7 @@ export default function CostCenterClient({ companies, countries, unidades }: { c
               <th className="text-left px-3 py-2.5 font-medium">Empresa</th><th className="text-left px-3 py-2.5 font-medium">Unidade</th><th className="text-left px-3 py-2.5 font-medium">Divisão</th><th className="text-left px-3 py-2.5 font-medium">País</th><th className="px-3 py-2.5" />
             </tr></thead>
             <tbody className="divide-y divide-slate-50">
-              {shown.length === 0 && <tr><td colSpan={9} className="px-4 py-8 text-center text-slate-400">{q.trim() ? 'Nada encontrado' : 'Nenhum centro de custo'}</td></tr>}
+              {shown.length === 0 && <tr><td colSpan={9} className="px-4 py-8 text-center">{q.trim() ? <span className="text-slate-400">Nada encontrado</span> : <div className="text-slate-500 max-w-md mx-auto"><p className="font-semibold text-slate-700">Você ainda não tem centros de custo</p><p className="text-sm mt-1">O centro de custo (CC) é onde o budget e o realizado batem. Pertence a um país + unidade + empresa. Cadastre país, empresa e unidade antes.</p><p className="text-xs text-slate-400 mt-2">Cadastre o primeiro no formulário acima.</p></div>}</td></tr>}
               {shown.map(c => (
                 <tr key={c.id} className="hover:bg-slate-50">
                   <td className="px-3 py-2 font-mono text-xs text-slate-600">{c.code}</td>

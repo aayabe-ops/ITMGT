@@ -9,7 +9,8 @@ export default function Page() {
   if (user.role !== 'admin') redirect('/')
   return (
     <Layout user={user}>
-      <LookupCrud endpoint="/api/platforms" title="Plataformas" subtitle="Nível mais alto da hierarquia (3 plataformas)" />
+      <LookupCrud endpoint="/api/platforms" title="Plataformas" subtitle="Nível mais alto da hierarquia (3 plataformas)"
+        teach={{ what: 'plataformas', example: 'A plataforma é o nível mais alto da estrutura — a regional da empresa. Ex.: Emergent Cold Brasil.' }} />
     </Layout>
   )
 }

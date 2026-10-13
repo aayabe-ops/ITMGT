@@ -8,8 +8,9 @@ import GuideCard from '@/components/GuideCard'
 interface Opt { id: string; name: string; code?: string }
 interface Item { id: string; code: string; name: string; is_active: boolean; parent_name: string | null;[k: string]: any }
 
-export default function HierCrud({ endpoint, title, subtitle, parentLabel, parentField, parents }: {
+export default function HierCrud({ endpoint, title, subtitle, parentLabel, parentField, parents, teach }: {
   endpoint: string; title: string; subtitle?: string; parentLabel: string; parentField: string; parents: Opt[]
+  teach?: { what: string; example?: string }
 }) {
   const emptyForm: any = { id: '', code: '', name: '', [parentField]: '' }
   const [items, setItems] = useState<Item[]>([])
@@ -218,7 +219,18 @@ export default function HierCrud({ endpoint, title, subtitle, parentLabel, paren
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {shown.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-400">{q.trim() ? 'Nada encontrado para a busca' : 'Nenhum registro'}</td></tr>}
+            {shown.length === 0 && (
+              <tr><td colSpan={5} className="px-4 py-8 text-center">
+                {q.trim() ? <span className="text-slate-400">Nada encontrado para a busca</span>
+                  : teach ? (
+                    <div className="text-slate-500 max-w-md mx-auto">
+                      <p className="font-semibold text-slate-700">Você ainda não tem {teach.what}</p>
+                      {teach.example && <p className="text-sm mt-1">{teach.example}</p>}
+                      <p className="text-xs text-slate-400 mt-2">Cadastre o primeiro no formulário acima.</p>
+                    </div>
+                  ) : <span className="text-slate-400">Nenhum registro</span>}
+              </td></tr>
+            )}
             {shown.map(it => (
               <tr key={it.id} className={clsx('hover:bg-slate-50', !it.is_active && 'opacity-50')}>
                 <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{it.code}</td>

@@ -12,7 +12,8 @@ export default async function Page() {
   return (
     <Layout user={user}>
       <HierCrud endpoint="/api/countries" title="Países" subtitle="Cada país pertence a uma plataforma (11 países)"
-        parentLabel="Plataforma" parentField="platform_id" parents={platforms} />
+        parentLabel="Plataforma" parentField="platform_id" parents={platforms}
+        teach={{ what: 'países', example: 'Cada país pertence a uma plataforma e tem uma moeda. Ex.: Brasil (BRL), Uruguai (UYU).' }} />
     </Layout>
   )
 }

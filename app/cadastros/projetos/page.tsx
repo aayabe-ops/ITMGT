@@ -9,7 +9,8 @@ export default function Page() {
   if (user.role !== 'admin') redirect('/')
   return (
     <Layout user={user}>
-      <LookupCrud endpoint="/api/projects" title="Projetos" subtitle="Códigos de projeto" />
+      <LookupCrud endpoint="/api/projects" title="Projetos" subtitle="Códigos de projeto"
+        teach={{ what: 'projetos', example: 'Um projeto agrupa despesas de uma iniciativa específica (opcional). Ex.: Migração SAP, Rollout Wi-Fi.' }} />
     </Layout>
   )
 }

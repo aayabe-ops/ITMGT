@@ -317,7 +317,7 @@ export default function SuppliersClient({ types, categories, projects, units, co
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {shown.length === 0 && <tr><td colSpan={10} className="px-4 py-8 text-center text-slate-400">{q.trim() ? 'Nada encontrado' : 'Nenhum fornecedor'}</td></tr>}
+              {shown.length === 0 && <tr><td colSpan={10} className="px-4 py-8 text-center">{q.trim() ? <span className="text-slate-400">Nada encontrado</span> : <div className="text-slate-500 max-w-md mx-auto"><p className="font-semibold text-slate-700">Você ainda não tem fornecedores</p><p className="text-sm mt-1">Um fornecedor é quem presta o serviço de TI — ex.: SEIDOR (sistemas), Embratel (link de internet). Use o botão <b>Novo fornecedor (guiado)</b> acima.</p></div>}</td></tr>}
               {shown.map(s => (
                 <tr key={s.id} className={clsx('hover:bg-slate-50', !s.is_active && 'opacity-50')}>
                   <td className="px-4 py-2.5 text-slate-800">{s.short_name || s.name}</td>

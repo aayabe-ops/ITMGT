@@ -9,7 +9,8 @@ export default function Page() {
   if (user.role !== 'admin') redirect('/')
   return (
     <Layout user={user}>
-      <LookupCrud endpoint="/api/currencies" title="Moedas" subtitle="Moedas usadas (código ISO)" />
+      <LookupCrud endpoint="/api/currencies" title="Moedas" subtitle="Moedas usadas (código ISO)"
+        teach={{ what: 'moedas', example: 'A moeda em que os custos são lançados. Ex.: BRL (Real), UYU (Peso uruguaio), PYG (Guarani).' }} />
     </Layout>
   )
 }

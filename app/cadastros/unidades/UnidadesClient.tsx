@@ -141,7 +141,7 @@ export default function UnidadesClient({ countries, costCenters }: { countries: 
               <th className="text-left px-3 py-2.5 font-medium">País</th><th className="text-left px-3 py-2.5 font-medium">Centros de Custo</th><th className="px-3 py-2.5" />
             </tr></thead>
             <tbody className="divide-y divide-slate-50">
-              {shown.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-400">{q.trim() ? 'Nada encontrado' : 'Nenhuma unidade'}</td></tr>}
+              {shown.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center">{q.trim() ? <span className="text-slate-400">Nada encontrado</span> : <div className="text-slate-500 max-w-md mx-auto"><p className="font-semibold text-slate-700">Você ainda não tem unidades</p><p className="text-sm mt-1">Uma unidade é uma filial/planta vinculada a um país. Ex.: Guarulhos, Londrina. Ela agrupa os centros de custo.</p><p className="text-xs text-slate-400 mt-2">Cadastre a primeira no formulário acima.</p></div>}</td></tr>}
               {shown.map(u => (
                 <tr key={u.id} className="hover:bg-slate-50">
                   <td className="px-3 py-2 font-mono text-xs text-slate-600">{u.code}</td>

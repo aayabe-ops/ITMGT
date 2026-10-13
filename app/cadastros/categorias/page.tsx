@@ -26,7 +26,8 @@ export default async function Page() {
             ],
           },
         ]}
-        guideNote="O Grupo é o nível 1 da taxonomia de TI (Aplicações & Software, Infra & Cloud, Telecom…). O Tratamento (OPEX/CAPEX) define a natureza contábil; o fornecedor pode sobrepor." />
+        guideNote="O Grupo é o nível 1 da taxonomia de TI (Aplicações & Software, Infra & Cloud, Telecom…). O Tratamento (OPEX/CAPEX) define a natureza contábil; o fornecedor pode sobrepor."
+        teach={{ what: 'categorias de despesa', example: 'Uma categoria é o tipo de serviço — ex.: Internet, Software, Monitoramento. É o que define o serviço de cada fornecedor.' }} />
     </Layout>
   )
 }
