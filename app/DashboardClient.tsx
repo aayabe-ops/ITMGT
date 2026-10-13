@@ -5,6 +5,7 @@ import { MONTHS_PT } from '@/lib/types'
 import { yearOptions, DEFAULT_YEAR } from '@/lib/years'
 import { RefreshCw } from 'lucide-react'
 import clsx from 'clsx'
+import WelcomeOnboarding from '@/components/WelcomeOnboarding'
 import dynamic from 'next/dynamic'
 const ReactECharts = dynamic(() => import('echarts-for-react'), { ssr: false })
 
@@ -294,6 +295,7 @@ export default function DashboardClient({ user, units, categories, suppliers, co
 
   return (
     <div className="page-wide">
+      <WelcomeOnboarding user={{ role: user.role, full_name: user.full_name, email: user.email }} />
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="page-title">Dashboard</h1>
