@@ -10,7 +10,7 @@ const money = (n: number, cur = 'USD') => { try { return new Intl.NumberFormat('
 
 const empty = {
   id: '', code: '', name: '', supplier_id: '', unit_id: '', category_id: '', cost_center_id: '', currency_id: '',
-  cost_class: 'OPEX', total_value: '', monthly_value: '', periodicity: 'MENSAL',
+  cost_class: 'OPEX', expense_mode: 'DIRETO', total_value: '', monthly_value: '', periodicity: 'MENSAL',
   start_date: '', end_date: '', readjust_index: '', readjust_month: '', notes: '',
 }
 
@@ -72,17 +72,17 @@ export default function ContractsClient({ suppliers, units, categories, costCent
   return (
     <div className="page space-y-6">
       <div>
-        <h1 className="page-title flex items-center gap-2"><FileSignature className="w-5 h-5 text-blue-600" /> Contratos</h1>
-        <p className="text-sm text-slate-500">Valor, vigência, moeda, reajuste e comprometimento futuro por fornecedor/unidade/categoria.</p>
+        <h1 className="page-title flex items-center gap-2"><FileSignature className="w-5 h-5 text-blue-600" /> Serviços</h1>
+        <p className="text-sm text-slate-500">Cada serviço pertence a um fornecedor e define categoria, modo (direto/rateio), tratamento, valor e vigência. É a chave de reconciliação de budget × realizado.</p>
       </div>
 
       <GuideCard storageKey="/cadastros/contratos"
         steps={[
-          'Selecione o Fornecedor e (opcional) a Categoria e a Unidade do contrato.',
-          'Um mesmo fornecedor pode ter vários contratos — um por unidade/serviço, com vigências e valores diferentes.',
-          'Informe Classe (OPEX/CAPEX), Valores, Vigência (início/fim) e, se houver, Índice/Mês de reajuste.',
+          'Um serviço = fornecedor + categoria. Um mesmo fornecedor pode ter vários serviços (ex.: link de internet direto + monitoramento rateado).',
+          'Defina o Modo: Direto (CC fixo) ou Rateio (distribui entre unidades).',
+          'Informe Classe (OPEX/CAPEX), Valores, Vigência e, se houver, Índice/Mês de reajuste.',
         ]}
-        note="O Código é opcional, mas se preenchido deve ser único. Cadastre antes o Fornecedor e a Unidade."
+        note="O serviço é o que liga budget, realizado e rateio. Cadastre antes o Fornecedor."
       />
 
       {/* Comprometido no ano */}
@@ -127,6 +127,11 @@ export default function ContractsClient({ suppliers, units, categories, costCent
               <option value="OPEX">OPEX</option><option value="CAPEX">CAPEX</option><option value="OTC">OTC</option>
             </select>
           </div>
+          <div><label className="label">Modo</label>
+            <select className="input" value={form.expense_mode} onChange={e => set('expense_mode', e.target.value)}>
+              <option value="DIRETO">Direto (CC fixo)</option><option value="RATEIO">Rateio entre unidades</option>
+            </select>
+          </div>
           <div><label className="label">Periodicidade</label>
             <select className="input" value={form.periodicity} onChange={e => set('periodicity', e.target.value)}>
               <option value="MENSAL">Mensal</option><option value="ANUAL">Anual</option><option value="UNICO">Único</option>
@@ -149,7 +154,7 @@ export default function ContractsClient({ suppliers, units, categories, costCent
         {err && <p className="text-sm text-red-600">{err}</p>}
         <div className="flex items-center gap-2">
           <button type="submit" className="btn-primary flex items-center gap-1.5" disabled={saving}>
-            {form.id ? <><Pencil className="w-4 h-4" /> Atualizar</> : <><Plus className="w-4 h-4" /> Adicionar contrato</>}
+            {form.id ? <><Pencil className="w-4 h-4" /> Atualizar</> : <><Plus className="w-4 h-4" /> Adicionar serviço</>}
           </button>
           {form.id && <button type="button" className="btn-secondary" onClick={reset}>Cancelar edição</button>}
         </div>
@@ -163,7 +168,7 @@ export default function ContractsClient({ suppliers, units, categories, costCent
       return (
       <div className="card overflow-hidden">
         <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
-          <h2 className="text-sm font-semibold text-slate-800">Contratos ({shown.length}{shown.length !== list.length ? ` de ${list.length}` : ''})</h2>
+          <h2 className="text-sm font-semibold text-slate-800">Serviços ({shown.length}{shown.length !== list.length ? ` de ${list.length}` : ''})</h2>
           <div className="flex items-center gap-2 flex-wrap">
             <div className="relative w-56">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -186,7 +191,7 @@ export default function ContractsClient({ suppliers, units, categories, costCent
               <th className="px-4 py-2.5" />
             </tr></thead>
             <tbody className="divide-y divide-slate-50">
-              {shown.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">Nenhum contrato</td></tr>}
+              {shown.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center">{q.trim() ? <span className="text-slate-400">Nada encontrado</span> : <div className="text-slate-500 max-w-md mx-auto"><p className="font-semibold text-slate-700">Você ainda não tem serviços</p><p className="text-sm mt-1">Um serviço é o que um fornecedor presta — ex.: link de internet (direto) ou monitoramento (rateado). Cadastre o primeiro no formulário acima.</p></div>}</td></tr>}
               {shown.map(c => (
                 <tr key={c.id} className={clsx('hover:bg-slate-50', !c.is_active && 'opacity-50')}>
                   <td className="px-4 py-2.5 text-slate-700">{c.name}{c.code && <span className="text-slate-400 text-xs ml-1">({c.code})</span>}</td>
