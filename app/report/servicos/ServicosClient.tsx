@@ -12,6 +12,7 @@ type Row = {
   unit_id: string; unit_code: string; unidade_id: string | null; unidade_nome: string | null
   supplier_id: string | null; supplier_name: string | null
   category_id: string | null; category_name: string | null
+  service_id: string | null; servico_nome: string | null
   contratado: number; orcado: number; realizado: number; rateado: boolean
 }
 
@@ -49,7 +50,7 @@ export default function ServicosClient({ countries, unidades }: { countries: Opt
   const shown = useMemo(() => {
     const base = group
       ? Object.values(rows.reduce((acc: Record<string, Row>, r) => {
-          const k = `${r.supplier_id || ''}|${r.category_id || ''}`
+          const k = r.service_id || `${r.supplier_id || ''}|${r.category_id || ''}`
           const a = acc[k] || { ...r, unit_id: '', unit_code: '', unidade_id: null, unidade_nome: null, contratado: 0, orcado: 0, realizado: 0 }
           a.contratado += r.contratado; a.orcado += r.orcado; a.realizado += r.realizado; a.rateado = a.rateado || r.rateado
           acc[k] = a; return acc
@@ -57,7 +58,7 @@ export default function ServicosClient({ countries, unidades }: { countries: Opt
       : rows
     const nq = q.trim().toLowerCase()
     const filtered = nq
-      ? base.filter(r => [r.supplier_name, r.category_name, r.unidade_nome, r.unit_code].some(v => String(v || '').toLowerCase().includes(nq)))
+      ? base.filter(r => [r.supplier_name, r.category_name, r.servico_nome, r.unidade_nome, r.unit_code].some(v => String(v || '').toLowerCase().includes(nq)))
       : base
     return filtered.sort((a, b) => b.realizado - a.realizado || b.orcado - a.orcado)
   }, [rows, group, q])
@@ -68,13 +69,13 @@ export default function ServicosClient({ countries, unidades }: { countries: Opt
 
   function exportCsv() {
     const header = (group
-      ? ['fornecedor', 'categoria', 'modo', 'contratado', 'orcado', 'realizado', 'real_menos_orc']
-      : ['fornecedor', 'categoria', 'unidade', 'modo', 'contratado', 'orcado', 'realizado', 'real_menos_orc']).join(',')
+      ? ['fornecedor', 'servico', 'categoria', 'modo', 'contratado', 'orcado', 'realizado', 'real_menos_orc']
+      : ['fornecedor', 'servico', 'categoria', 'unidade', 'modo', 'contratado', 'orcado', 'realizado', 'real_menos_orc']).join(',')
     const esc = (s: any) => { const v = String(s ?? ''); return /[",;\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v }
     const data = shown.map(r => {
       const cols = group
-        ? [r.supplier_name, r.category_name, r.rateado ? 'RATEIO' : 'DIRETO', r.contratado, r.orcado, r.realizado, r.realizado - r.orcado]
-        : [r.supplier_name, r.category_name, r.unidade_nome || r.unit_code, r.rateado ? 'RATEIO' : 'DIRETO', r.contratado, r.orcado, r.realizado, r.realizado - r.orcado]
+        ? [r.supplier_name, r.servico_nome, r.category_name, r.rateado ? 'RATEIO' : 'DIRETO', r.contratado, r.orcado, r.realizado, r.realizado - r.orcado]
+        : [r.supplier_name, r.servico_nome, r.category_name, r.unidade_nome || r.unit_code, r.rateado ? 'RATEIO' : 'DIRETO', r.contratado, r.orcado, r.realizado, r.realizado - r.orcado]
       return cols.map(esc).join(',')
     })
     csvDownload(`correlacao_servicos_${year}.csv`, header, data)
@@ -142,7 +143,7 @@ export default function ServicosClient({ countries, unidades }: { countries: Opt
             <thead>
               <tr className="text-xs text-slate-500 uppercase tracking-wide bg-slate-50 border-b border-slate-100">
                 <th className="text-left px-4 py-3 font-medium">Fornecedor</th>
-                <th className="text-left px-4 py-3 font-medium">Categoria (serviço)</th>
+                <th className="text-left px-4 py-3 font-medium">Serviço / Categoria</th>
                 {!group && <th className="text-left px-4 py-3 font-medium">Unidade</th>}
                 <th className="text-center px-4 py-3 font-medium">Modo</th>
                 <th className="text-right px-4 py-3 font-medium">Contratado</th>
@@ -154,14 +155,17 @@ export default function ServicosClient({ countries, unidades }: { countries: Opt
             <tbody className="divide-y divide-slate-50">
               {shown.length === 0 && <tr><td colSpan={group ? 7 : 8} className="px-4 py-10 text-center text-slate-400">{loading ? 'Carregando…' : 'Nenhum serviço no período/filtro.'}</td></tr>}
               {shown.map((r, i) => (
-                <tr key={(r.supplier_id || '') + (r.category_id || '') + (group ? '' : r.unit_id) + i} className="hover:bg-slate-50/80 transition-colors">
+                <tr key={(r.service_id || r.supplier_id || '') + (r.category_id || '') + (group ? '' : r.unit_id) + i} className="hover:bg-slate-50/80 transition-colors">
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-2.5">
                       <span className="w-7 h-7 rounded-full bg-navy-100 text-navy-700 flex items-center justify-center text-[10px] font-semibold shrink-0">{initials(r.supplier_name)}</span>
                       <span className="text-slate-700">{r.supplier_name ?? <span className="text-slate-400">(sem fornecedor)</span>}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-2.5 text-slate-600 text-xs">{r.category_name ?? '—'}</td>
+                  <td className="px-4 py-2.5 text-slate-600 text-xs">
+                    {r.servico_nome ? <span className="text-slate-700 font-medium">{r.servico_nome}</span> : <span className="text-slate-400 italic">sem serviço cadastrado</span>}
+                    <div className="text-[11px] text-slate-400">{r.category_name ?? '—'}</div>
+                  </td>
                   {!group && <td className="px-4 py-2.5 text-xs text-slate-500">{r.unidade_nome ?? r.unit_code ?? '—'}</td>}
                   <td className="px-4 py-2.5 text-center">
                     {r.rateado ? <span className="text-[11px] px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200">Rateio</span>

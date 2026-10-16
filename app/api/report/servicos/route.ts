@@ -25,28 +25,29 @@ export async function GET(req: NextRequest) {
 
   const sql = `
     WITH ctr AS (
-      SELECT supplier_id, category_id, unit_id, SUM(monthly_value * 12) AS v
+      SELECT id AS service_id, supplier_id, category_id, unit_id, SUM(monthly_value * 12) AS v
         FROM public.contracts
        WHERE is_active = true AND monthly_value IS NOT NULL
          AND (start_date IS NULL OR date_part('year', start_date) <= $1)
          AND (end_date   IS NULL OR date_part('year', end_date)   >= $1)
-       GROUP BY supplier_id, category_id, unit_id ),
+       GROUP BY id, supplier_id, category_id, unit_id ),
     bud AS (
-      SELECT supplier_id, category_id, unit_id, SUM(value) AS v
+      SELECT service_id, supplier_id, category_id, unit_id, SUM(value) AS v
         FROM public.budget_lines WHERE year = $1 AND is_active = true
-       GROUP BY supplier_id, category_id, unit_id ),
+       GROUP BY service_id, supplier_id, category_id, unit_id ),
     act AS (
-      SELECT supplier_id, category_id, unit_id, SUM(value) AS v
+      SELECT service_id, supplier_id, category_id, unit_id, SUM(value) AS v
         FROM public.actual_lines WHERE year = $1 AND origin::text <> 'RATEADO_ORIGEM'
-       GROUP BY supplier_id, category_id, unit_id ),
+       GROUP BY service_id, supplier_id, category_id, unit_id ),
     keys AS (
-      SELECT supplier_id, category_id, unit_id FROM ctr
-      UNION SELECT supplier_id, category_id, unit_id FROM bud
-      UNION SELECT supplier_id, category_id, unit_id FROM act )
+      SELECT service_id, supplier_id, category_id, unit_id FROM ctr
+      UNION SELECT service_id, supplier_id, category_id, unit_id FROM bud
+      UNION SELECT service_id, supplier_id, category_id, unit_id FROM act )
     SELECT u.id AS unit_id, u.code AS unit_code,
            ud.id AS unidade_id, ud.name AS unidade_nome,
            s.id AS supplier_id, COALESCE(s.short_name, s.name) AS supplier_name,
            c.id AS category_id, c.name AS category_name,
+           k.service_id, COALESCE(NULLIF(svc.name,''), svc.code) AS servico_nome,
            (COALESCE(ctr.v,0) / ${rate})::float AS contratado,
            (COALESCE(bud.v,0) / ${rate})::float AS orcado,
            (COALESCE(act.v,0) / ${rate})::float AS realizado,
@@ -61,12 +62,13 @@ export async function GET(req: NextRequest) {
       LEFT JOIN public.unidades ud ON ud.id = u.unidade_id
       LEFT JOIN public.suppliers s ON s.id = k.supplier_id
       LEFT JOIN public.categories c ON c.id = k.category_id
-      LEFT JOIN ctr ON ctr.supplier_id IS NOT DISTINCT FROM k.supplier_id AND ctr.category_id IS NOT DISTINCT FROM k.category_id AND ctr.unit_id = k.unit_id
-      LEFT JOIN bud ON bud.supplier_id IS NOT DISTINCT FROM k.supplier_id AND bud.category_id IS NOT DISTINCT FROM k.category_id AND bud.unit_id = k.unit_id
-      LEFT JOIN act ON act.supplier_id IS NOT DISTINCT FROM k.supplier_id AND act.category_id IS NOT DISTINCT FROM k.category_id AND act.unit_id = k.unit_id
+      LEFT JOIN public.contracts svc ON svc.id = k.service_id
+      LEFT JOIN ctr ON ctr.service_id IS NOT DISTINCT FROM k.service_id AND ctr.supplier_id IS NOT DISTINCT FROM k.supplier_id AND ctr.category_id IS NOT DISTINCT FROM k.category_id AND ctr.unit_id = k.unit_id
+      LEFT JOIN bud ON bud.service_id IS NOT DISTINCT FROM k.service_id AND bud.supplier_id IS NOT DISTINCT FROM k.supplier_id AND bud.category_id IS NOT DISTINCT FROM k.category_id AND bud.unit_id = k.unit_id
+      LEFT JOIN act ON act.service_id IS NOT DISTINCT FROM k.service_id AND act.supplier_id IS NOT DISTINCT FROM k.supplier_id AND act.category_id IS NOT DISTINCT FROM k.category_id AND act.unit_id = k.unit_id
       LEFT JOIN public.exchange_rates er ON er.country_id = u.country_id AND er.year = $1 AND er.month = 0
       ${where}
-     ORDER BY supplier_name, category_name, unidade_nome`
+     ORDER BY supplier_name, category_name, servico_nome NULLS LAST, unidade_nome`
   try {
     const { rows } = await pool.query(sql, params)
     return NextResponse.json({ year, currency: usd ? 'USD' : 'BRL', rows })
