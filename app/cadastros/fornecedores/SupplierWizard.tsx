@@ -110,21 +110,19 @@ export default function SupplierWizard({ types, categories, projects, units, cou
       const d = await r.json().catch(() => ({}))
       if (!r.ok || !d.id) { setErr(d.error || 'Erro ao criar o fornecedor.'); setSaving(false); return }
       const supplierId = d.id
-      // Contrato opcional: só cria se informaram valor mensal.
-      if (f.monthly_value) {
-        const mv = parseFloat(String(f.monthly_value).replace(/\./g, '').replace(',', '.'))
-        if (isFinite(mv) && mv > 0) {
-          await fetch('/api/contracts', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: `${f.short_name || f.name} — ${catName || 'Serviço'}`,
-              supplier_id: supplierId, category_id: f.category_id || null, unit_id: isRateio ? null : (f.unit_id || null),
-              cost_class: f.cost_class, expense_mode: f.expense_mode, monthly_value: mv, currency_id: f.currency_id || null,
-              start_date: f.contract_start || null, end_date: f.contract_end || null, periodicity: 'MENSAL',
-            }),
-          }).catch(() => {})
-        }
-      }
+      // Sempre cria o serviço (categoria é obrigatória) — fecha a jornada
+      // fornecedor → serviço → rateio. O valor mensal entra só quando informado.
+      const mvRaw = f.monthly_value ? parseFloat(String(f.monthly_value).replace(/\./g, '').replace(',', '.')) : NaN
+      const mv = isFinite(mvRaw) && mvRaw > 0 ? mvRaw : null
+      await fetch('/api/contracts', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: `${f.short_name || f.name} — ${catName || 'Serviço'}`,
+          supplier_id: supplierId, category_id: f.category_id || null, unit_id: isRateio ? null : (f.unit_id || null),
+          cost_class: f.cost_class, expense_mode: f.expense_mode, monthly_value: mv, currency_id: mv ? (f.currency_id || null) : null,
+          start_date: f.contract_start || null, end_date: f.contract_end || null, periodicity: 'MENSAL',
+        }),
+      }).catch(() => {})
       clearDraft()
       setDoneId(supplierId)
     } catch (e: any) { setErr(e?.message || 'Erro ao salvar.') }
@@ -137,7 +135,7 @@ export default function SupplierWizard({ types, categories, projects, units, cou
         {/* header */}
         <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
           <div>
-            <h2 className="font-semibold text-slate-800">Novo fornecedor / serviço</h2>
+            <h2 className="font-semibold text-slate-800">Novo fornecedor + primeiro serviço</h2>
             <p className="text-xs text-slate-500">{doneId ? 'Concluído' : `Passo ${step} de 5 · ${STEPS[step - 1]}`}</p>
           </div>
           <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-700"><X className="w-5 h-5" /></button>
@@ -163,8 +161,8 @@ export default function SupplierWizard({ types, categories, projects, units, cou
           {doneId ? (
             <div className="text-center py-6">
               <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
-              <h3 className="font-semibold text-slate-800">Fornecedor criado</h3>
-              <p className="text-sm text-slate-500 mt-1">{f.short_name || f.name} · {catName}</p>
+              <h3 className="font-semibold text-slate-800">Fornecedor e serviço criados</h3>
+              <p className="text-sm text-slate-500 mt-1">{f.short_name || f.name} · serviço: {catName}</p>
               {isRateio && (
                 <div className="mt-5 rounded-xl border border-violet-200 bg-violet-50/60 p-4 text-left">
                   <p className="text-sm font-medium text-violet-800 flex items-center gap-1.5"><Share2 className="w-4 h-4" /> Falta a regra de rateio</p>
@@ -190,6 +188,7 @@ export default function SupplierWizard({ types, categories, projects, units, cou
               {/* Passo 1 — Identificação */}
               {step === 1 && (
                 <div className="space-y-4">
+                  <p className="text-sm text-slate-600">Primeiro, <b>quem é o fornecedor</b> (identidade). O que ele presta — o <b>serviço</b> — você define nos próximos passos.</p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="sm:col-span-2"><Field label="Nome *"><input className="input" value={f.name} onChange={e => set('name', e.target.value)} placeholder="Razão social / nome" autoFocus /></Field></div>
                     <Field label="Nome curto" hint="apelido p/ telas"><input className="input" value={f.short_name} onChange={e => set('short_name', e.target.value)} /></Field>
@@ -217,6 +216,7 @@ export default function SupplierWizard({ types, categories, projects, units, cou
               {/* Passo 2 — Classificação do serviço */}
               {step === 2 && (
                 <div className="space-y-4">
+                  <p className="text-sm text-slate-600">Agora o <b>serviço</b> que este fornecedor presta. A categoria define o serviço; budget, realizado e rateio se correlacionam por ele.</p>
                   {categories.length === 0 && <PrereqNote what="categoria" href="/cadastros/categorias" />}
                   <Field label="Categoria (serviço) *" hint="a categoria define o serviço; budget e realizado herdam dela">
                     <select className="input" value={f.category_id} onChange={e => set('category_id', e.target.value)}>
@@ -339,7 +339,7 @@ export default function SupplierWizard({ types, categories, projects, units, cou
               </button>
             ) : (
               <button onClick={finish} disabled={saving || !allValid} className={clsx('btn-primary text-sm flex items-center gap-1.5', (saving || !allValid) && 'opacity-50 cursor-not-allowed')}>
-                <Check className="w-4 h-4" /> {saving ? 'Criando…' : 'Ativar fornecedor'}
+                <Check className="w-4 h-4" /> {saving ? 'Criando…' : 'Criar fornecedor + serviço'}
               </button>
             )}
           </div>
