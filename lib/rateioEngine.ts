@@ -172,10 +172,9 @@ export async function applyRateioBudget(year: number, createdBy: string | null):
               to_char(rc.valid_from,'YYYY-MM-DD') AS valid_from,
               to_char(rc.valid_to,'YYYY-MM-DD')   AS valid_to,
               ad.code AS driver_code, ad.kind AS driver_kind,
-              s.category_id AS supplier_category_id
+              ct.category_id AS service_category_id
          FROM public.rateio_criteria rc
          JOIN public.allocation_drivers ad ON ad.id=rc.driver_id
-         LEFT JOIN public.suppliers s ON s.id=rc.supplier_id
          LEFT JOIN public.contracts ct ON ct.id=rc.contract_id
         WHERE rc.status='ACTIVE' AND rc.apply_budget=true`)
 
@@ -184,7 +183,7 @@ export async function applyRateioBudget(year: number, createdBy: string | null):
     let lines = 0, skipped = 0, consumed = 0
 
     for (const rc of rules) {
-      const category_id = rc.category_id || rc.supplier_category_id
+      const category_id = rc.category_id || rc.service_category_id
       if (!category_id) { skipped++; continue }     // budget_lines exige categoria
 
       let mFrom = 1, mTo = 12

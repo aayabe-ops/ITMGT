@@ -4,7 +4,7 @@ import pool from '@/lib/db'
 
 const noauth = () => NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-const FIELDS = ['name', 'short_name', 'supplier_type_id', 'category_id', 'expense_mode', 'unit_id', 'cost_class', 'project_id', 'ga_group_id', 'cost_center_id', 'solution_type_id', 'contract_start', 'contract_end', 'payment_due_date', 'is_active'] as const
+const FIELDS = ['name', 'short_name', 'cnpj', 'supplier_type_id', 'category_id', 'expense_mode', 'unit_id', 'cost_class', 'project_id', 'ga_group_id', 'cost_center_id', 'solution_type_id', 'contract_start', 'contract_end', 'payment_due_date', 'is_active'] as const
 
 async function syncCountries(supplierId: string, countryIds: any) {
   if (!Array.isArray(countryIds)) return
@@ -17,7 +17,7 @@ async function syncCountries(supplierId: string, countryIds: any) {
 export async function GET() {
   const u = getCurrentUser(); if (!u) return noauth()
   const { rows } = await pool.query(`
-    SELECT s.id, s.name, s.short_name, s.is_active, s.expense_mode, s.cost_class,
+    SELECT s.id, s.name, s.short_name, s.cnpj, s.is_active, s.expense_mode, s.cost_class,
            s.supplier_type_id, s.category_id, s.unit_id, s.project_id, s.ga_group_id, s.cost_center_id, s.solution_type_id,
            gg.name AS ga_group_name, cc.name AS cost_center_name, sol.name AS solution_type_name,
            to_char(s.contract_start, 'YYYY-MM-DD')   AS contract_start,

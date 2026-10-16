@@ -97,14 +97,12 @@ export default function SupplierWizard({ types, categories, projects, units, cou
     if (!allValid) { setErr('Há passos incompletos — revise os destaques.'); return }
     setSaving(true); setErr('')
     try {
+      // Fornecedor = identidade. Categoria/modo/unidade/classe/vigência/vencimento
+      // vão para o SERVIÇO (contrato) criado abaixo, não para o fornecedor.
       const sup: any = {
         name: f.name.trim(), short_name: f.short_name || null,
-        supplier_type_id: f.supplier_type_id || null, category_id: f.category_id || null,
-        cost_class: f.cost_class, expense_mode: f.expense_mode,
-        unit_id: isRateio ? null : (f.unit_id || null),
-        solution_type_id: f.solution_type_id || null, project_id: f.project_id || null,
+        supplier_type_id: f.supplier_type_id || null,
         country_ids: f.country_ids,
-        contract_start: f.contract_start || null, contract_end: f.contract_end || null, payment_due_date: f.payment_due_date || null,
       }
       const r = await fetch('/api/suppliers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(sup) })
       const d = await r.json().catch(() => ({}))
