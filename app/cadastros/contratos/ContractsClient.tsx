@@ -11,7 +11,7 @@ const money = (n: number, cur = 'USD') => { try { return new Intl.NumberFormat('
 const empty = {
   id: '', code: '', name: '', supplier_id: '', unit_id: '', category_id: '', cost_center_id: '', currency_id: '',
   cost_class: 'OPEX', expense_mode: 'DIRETO', total_value: '', monthly_value: '', periodicity: 'MENSAL',
-  start_date: '', end_date: '', readjust_index: '', readjust_month: '', notes: '',
+  start_date: '', end_date: '', payment_due_date: '', readjust_index: '', readjust_month: '', notes: '',
 }
 
 export default function ContractsClient({ suppliers, units, categories, costCenters, currencies }: {
@@ -53,7 +53,7 @@ export default function ContractsClient({ suppliers, units, categories, costCent
       readjust_month: c.readjust_month ?? '', code: c.code ?? '', notes: c.notes ?? '',
       supplier_id: c.supplier_id ?? '', unit_id: c.unit_id ?? '', category_id: c.category_id ?? '',
       cost_center_id: c.cost_center_id ?? '', currency_id: c.currency_id ?? '',
-      start_date: c.start_date ?? '', end_date: c.end_date ?? '', readjust_index: c.readjust_index ?? '',
+      start_date: c.start_date ?? '', end_date: c.end_date ?? '', payment_due_date: c.payment_due_date ?? '', readjust_index: c.readjust_index ?? '',
     })
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -149,6 +149,7 @@ export default function ContractsClient({ suppliers, units, categories, costCent
             <div><label className="label">Início</label><input type="date" className="input" value={form.start_date} onChange={e => set('start_date', e.target.value)} /></div>
             <div><label className="label">Fim</label><input type="date" className="input" value={form.end_date} onChange={e => set('end_date', e.target.value)} /></div>
           </div>
+          <div><label className="label">Vencimento do pagamento</label><input type="date" className="input" value={form.payment_due_date} onChange={e => set('payment_due_date', e.target.value)} /></div>
           <div><label className="label">Índice de reajuste</label><input className="input" placeholder="IPCA / IGPM / USD" value={form.readjust_index} onChange={e => set('readjust_index', e.target.value)} /></div>
           <div><label className="label">Mês de reajuste</label>
             <select className="input" value={form.readjust_month} onChange={e => set('readjust_month', e.target.value)}>

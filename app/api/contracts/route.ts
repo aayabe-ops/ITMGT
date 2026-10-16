@@ -6,7 +6,7 @@ const noauth = () => NextResponse.json({ error: 'Não autorizado' }, { status: 4
 
 const FIELDS = ['code', 'name', 'supplier_id', 'unit_id', 'category_id', 'cost_center_id', 'currency_id',
   'cost_class', 'expense_mode', 'total_value', 'monthly_value', 'periodicity', 'start_date', 'end_date',
-  'readjust_index', 'readjust_month', 'notes', 'is_active'] as const
+  'payment_due_date', 'readjust_index', 'readjust_month', 'notes', 'is_active'] as const
 
 export async function GET() {
   const u = getCurrentUser(); if (!u) return noauth()
@@ -15,6 +15,7 @@ export async function GET() {
            ct.cost_class::text AS cost_class, ct.expense_mode, ct.total_value, ct.monthly_value, ct.periodicity,
            to_char(ct.start_date,'YYYY-MM-DD') AS start_date,
            to_char(ct.end_date,'YYYY-MM-DD')   AS end_date,
+           to_char(ct.payment_due_date,'YYYY-MM-DD') AS payment_due_date,
            ct.readjust_index, ct.readjust_month, ct.notes, ct.is_active,
            COALESCE(s.short_name, s.name) AS supplier_name, un.code AS unit_code,
            c.name AS category_name, cc.name AS cost_center_name, cur.code AS currency_code
