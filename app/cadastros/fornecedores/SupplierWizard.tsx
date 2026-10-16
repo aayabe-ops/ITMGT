@@ -119,7 +119,7 @@ export default function SupplierWizard({ types, categories, projects, units, cou
             body: JSON.stringify({
               name: `${f.short_name || f.name} — ${catName || 'Serviço'}`,
               supplier_id: supplierId, category_id: f.category_id || null, unit_id: isRateio ? null : (f.unit_id || null),
-              cost_class: f.cost_class, monthly_value: mv, currency_id: f.currency_id || null,
+              cost_class: f.cost_class, expense_mode: f.expense_mode, monthly_value: mv, currency_id: f.currency_id || null,
               start_date: f.contract_start || null, end_date: f.contract_end || null, periodicity: 'MENSAL',
             }),
           }).catch(() => {})
