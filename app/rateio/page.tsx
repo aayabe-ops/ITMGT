@@ -17,7 +17,7 @@ export default async function RateioPage() {
                  WHERE u.is_active=true ORDER BY ud.name NULLS LAST, u.code`),
     pool.query(`SELECT id, code, name, kind, metric, unit_label FROM public.allocation_drivers WHERE is_active=true
                  ORDER BY (kind='EQUAL') DESC, (kind='MANUAL'), name`),
-    pool.query('SELECT id, code, name, supplier_id, monthly_value FROM public.contracts WHERE is_active=true ORDER BY name'),
+    pool.query('SELECT id, code, name, supplier_id, category_id, monthly_value FROM public.contracts WHERE is_active=true ORDER BY name'),
     pool.query('SELECT id, code, name FROM public.countries WHERE is_active=true ORDER BY name'),
   ])
 

@@ -29,6 +29,12 @@ export default function ContractsClient({ suppliers, units, categories, costCent
 
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }))
 
+  // Jornada fornecedor → serviços: ao chegar de um fornecedor, já filtra e pré-seleciona
+  useEffect(() => {
+    const f = new URLSearchParams(window.location.search).get('fornecedor')
+    if (f) { setFilterSupplier(f); setForm((prev: any) => ({ ...prev, supplier_id: f })) }
+  }, [])
+
   const load = useCallback(async () => {
     const r = await fetch('/api/contracts'); const d = await r.json()
     setList(Array.isArray(d) ? d : [])

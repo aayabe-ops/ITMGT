@@ -345,7 +345,7 @@ export default function RateioClient({ categories, suppliers, units, drivers, co
                   {suppliers.map(s => <option key={s.id} value={s.id}>{s.short_name || s.name}</option>)}
                 </select>
               </div>
-              <div><label className="label">Contrato / Serviço</label>
+              <div><label className="label">Serviço</label>
                 <select className="input" value={form.contract_id} onChange={e => set('contract_id', e.target.value)}>
                   <option value="">— (todo o fornecedor)</option>
                   {contractsForSupplier.map(c => <option key={c.id} value={c.id}>{c.code ? `${c.code} — ` : ''}{c.name}</option>)}

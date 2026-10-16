@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Trash2, Pencil, X, Upload, Download, Search, Wand2 } from 'lucide-react'
+import { Plus, Trash2, Pencil, X, Upload, Download, Search, Wand2, FileSignature } from 'lucide-react'
 import clsx from 'clsx'
 import { csvDownload, norm, readTable } from '@/lib/csv'
 import GuideCard from '@/components/GuideCard'
@@ -137,7 +137,7 @@ export default function SuppliersClient({ types, categories, projects, units, co
       <div className="mb-5 flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="page-title">Fornecedores</h1>
-          <p className="text-sm text-slate-500">Cadastro com tipo, categoria, rateio/direto, CAPEX·OPEX·OTC e projeto</p>
+          <p className="text-sm text-slate-500">Quem é o fornecedor (identidade). O que ele presta — categoria, modo, valor e rateio — fica em cada <b>Serviço</b> (ícone <FileSignature className="w-3.5 h-3.5 inline -mt-0.5" /> na lista).</p>
         </div>
         <div className="flex items-center gap-2">
           <button type="button" onClick={() => setWizard(true)} className="btn-primary text-sm flex items-center gap-1.5">
@@ -161,11 +161,11 @@ export default function SuppliersClient({ types, categories, projects, units, co
 
       <GuideCard storageKey="/cadastros/fornecedores"
         steps={[
-          'Informe o Fornecedor (nome/abreviação), o tipo e a categoria.',
-          'Defina se o custo é Rateado ou Direto e a classe (OPEX / CAPEX / OTC).',
-          'Para cadastrar em lote, baixe o Modelo CSV e use Importar CSV/XLSX.',
+          'Identidade: informe nome/abreviação, grupo e países atendidos.',
+          'Depois de salvar, use o ícone de Serviços na lista para cadastrar o que o fornecedor presta (categoria, modo, valor e rateio em cada serviço).',
+          'Os campos de categoria/modo/classe abaixo são padrões opcionais, herdados por novos serviços — podem ser ajustados por serviço.',
         ]}
-        note="O Fornecedor é usado em Contratos, Despesa e nas regras de Rateio." />
+        note="Fluxo: Fornecedor (identidade) → Serviços → Rateio por serviço." />
       {impMsg && <p className="text-sm text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2 mb-4">{impMsg}</p>}
 
       {/* Form */}
@@ -189,6 +189,9 @@ export default function SuppliersClient({ types, categories, projects, units, co
               <option value="">—</option>
               {types.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
+          </div>
+          <div className="md:col-span-3 border-t border-slate-100 pt-3 mt-1">
+            <p className="text-xs text-slate-400">Padrões do fornecedor <span className="text-slate-300">(opcionais)</span> — herdados por novos serviços e ajustáveis em cada serviço.</p>
           </div>
           <div>
             <label className="label">Categoria</label>
@@ -334,7 +337,8 @@ export default function SuppliersClient({ types, categories, projects, units, co
                   <td className="px-4 py-2.5 text-slate-600 text-xs">{(s.country_names || s.country_codes || []).join(', ') || '—'}</td>
                   <td className="px-4 py-2.5 text-center text-xs">{s.is_active ? '✓' : '—'}</td>
                   <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                    <button onClick={() => edit(s)} className="p-1 text-slate-400 hover:text-blue-600"><Pencil className="w-4 h-4" /></button>
+                    <a href={`/cadastros/contratos?fornecedor=${s.id}`} title="Serviços deste fornecedor" className="p-1 text-slate-400 hover:text-emerald-600 inline-flex"><FileSignature className="w-4 h-4" /></a>
+                    <button onClick={() => edit(s)} className="p-1 text-slate-400 hover:text-blue-600 ml-1"><Pencil className="w-4 h-4" /></button>
                     <button onClick={() => remove(s)} className="p-1 text-slate-400 hover:text-red-500 ml-1"><Trash2 className="w-4 h-4" /></button>
                   </td>
                 </tr>

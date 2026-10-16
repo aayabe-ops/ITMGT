@@ -193,12 +193,14 @@ export default function RateioWizard({ suppliers, contracts, categories, countri
           {/* 1 — Fornecedor & escopo */}
           {step === 1 && (
             <div className="space-y-4">
-              <Intro title="Qual fornecedor/serviço e escopo?" text="Selecione o fornecedor do custo e, opcionalmente, o contrato/serviço, categoria, país e a vigência." />
+              <Intro title="Qual serviço será rateado?" text="O rateio é por serviço. Escolha o fornecedor e o serviço; categoria e valor vêm do próprio serviço. Deixe o serviço em branco só para uma regra que valha para todo o fornecedor." />
               <div className="grid gap-3 md:grid-cols-2">
                 <Field label="Fornecedor *"><select className="input" disabled={scopeLocked} value={f.supplier_id} onChange={e => { set('supplier_id', e.target.value); set('contract_id', '') }}><option value="">Selecione…</option>{suppliers.map(s => <option key={s.id} value={s.id}>{s.short_name || s.name}</option>)}</select></Field>
-                <Field label="Contrato / Serviço"><select className="input" disabled={scopeLocked} value={f.contract_id} onChange={e => {
+                <Field label="Serviço"><select className="input" disabled={scopeLocked} value={f.contract_id} onChange={e => {
                   const cid = e.target.value; set('contract_id', cid)
-                  const mv = (contracts.find(c => c.id === cid) as any)?.monthly_value
+                  const svc = contracts.find(c => c.id === cid) as any
+                  if (svc?.category_id) set('category_id', svc.category_id)   // categoria vem do serviço
+                  const mv = svc?.monthly_value
                   if (mv != null && Number(mv) > 0) { const v = Number(mv).toLocaleString('pt-BR', { minimumFractionDigits: 2 }); setCost(v); setBudgetValue(v) }
                 }}><option value="">— (todo o fornecedor)</option>{contractsForSupplier.map(c => <option key={c.id} value={c.id}>{(c as any).monthly_value ? `${c.name} · R$ ${Number((c as any).monthly_value).toLocaleString('pt-BR')}/mês` : c.name}</option>)}</select></Field>
                 <Field label="Categoria"><select className="input" disabled={scopeLocked} value={f.category_id} onChange={e => set('category_id', e.target.value)}><option value="">Todas</option>{categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>
