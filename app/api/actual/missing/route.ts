@@ -60,11 +60,11 @@ export async function GET(req: NextRequest) {
     SELECT s.id,
            (s.id::text || '|' || COALESCE(svc.category_id::text, '')) AS key,
            COALESCE(s.short_name, s.name)         AS name,
-           s.expense_mode                         AS expense_mode,  -- padrão/dica; o modo real é por serviço (has_rule)
+           COALESCE(ct.expense_mode, 'DIRETO')    AS expense_mode,  -- padrão/dica do SERVIÇO; o modo real é has_rule
            svc.category_id                        AS category_id,   -- a categoria define o serviço
            c.name                                 AS category_name,
-           COALESCE(s.unit_id, svc.anchor_unit)   AS unit_id,       -- DIRETO: CC do cadastro › budget. RATEIO: âncora p/ origem
-           s.cost_class::text                     AS cost_class,    -- tratamento (OPEX/CAPEX/OTC) do fornecedor
+           COALESCE(ct.unit_id, svc.anchor_unit)  AS unit_id,       -- DIRETO: CC do serviço › budget. RATEIO: âncora p/ origem
+           COALESCE(ct.cost_class::text, c.cost_class::text) AS cost_class,  -- tratamento do serviço › categoria
            svc.cat_total                          AS budget_ano,
            EXISTS (
              SELECT 1 FROM public.rateio_criteria rc
@@ -77,6 +77,14 @@ export async function GET(req: NextRequest) {
     FROM svc
     JOIN public.suppliers s ON s.id = svc.supplier_id AND s.is_active = true
     LEFT JOIN public.categories c ON c.id = svc.category_id
+    LEFT JOIN LATERAL (
+      SELECT ct.expense_mode, ct.unit_id, ct.cost_class
+      FROM public.contracts ct
+      WHERE ct.is_active = true AND ct.supplier_id = svc.supplier_id
+        AND ct.category_id IS NOT DISTINCT FROM svc.category_id
+      ORDER BY (ct.unit_id IS NOT NULL) DESC, ct.created_at DESC
+      LIMIT 1
+    ) ct ON true
     WHERE NOT EXISTS (
       SELECT 1 FROM public.actual_lines al
       WHERE al.supplier_id = s.id AND al.year = $1 AND al.month = $2

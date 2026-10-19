@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
   if (category_id) add('b.category_id', 'al.category_id', category_id)
   if (supplier_id) add('b.supplier_id', null, supplier_id)
   const cost_class = sp.get('cost_class') || null
-  if (cost_class) { params.push(cost_class); const i = params.length; extraB.push(`AND s.cost_class::text = $${i}`); extraA.push(`AND al.cost_class::text = $${i}`) }
+  if (cost_class) { params.push(cost_class); const i = params.length; extraB.push(`AND COALESCE(b.cost_class, svc.cost_class)::text = $${i}`); extraA.push(`AND al.cost_class::text = $${i}`) }
   if (month)       add('b.month', 'al.month', month)
   else if (ytd)  { params.push(through); const i = params.length; extraB.push(`AND b.month <= $${i}`); extraA.push(`AND al.month <= $${i}`) }
 
@@ -62,22 +62,21 @@ export async function GET(req: NextRequest) {
   const sql = `
     WITH base AS (
       SELECT b.month, b.category_id, b.supplier_id, b.unit_id, u.country_id, u.company_id,
-             s.cost_class::text AS cost_class, cur.code AS currency_code, sol.name AS solution_type,
+             COALESCE(b.cost_class, svc.cost_class)::text AS cost_class, cur.code AS currency_code, NULL::text AS solution_type,
              (${vB})::float AS val
       FROM public.budget_lines b
       JOIN public.units u ON u.id = b.unit_id
-      LEFT JOIN public.suppliers s ON s.id = b.supplier_id
-      LEFT JOIN public.solution_types sol ON sol.id = s.solution_type_id
+      LEFT JOIN public.contracts svc ON svc.id = b.service_id
       LEFT JOIN public.currencies cur ON cur.id = b.currency_id
       LEFT JOIN public.exchange_rates er ON er.country_id = u.country_id AND er.year = b.year AND er.month = 0
       WHERE b.year = $1 AND b.is_active = true ${B}
     ),
     base_prev AS (
       SELECT b.category_id, b.supplier_id, u.country_id,
-             s.cost_class::text AS cost_class, (${vB})::float AS val
+             COALESCE(b.cost_class, svc.cost_class)::text AS cost_class, (${vB})::float AS val
       FROM public.budget_lines b
       JOIN public.units u ON u.id = b.unit_id
-      LEFT JOIN public.suppliers s ON s.id = b.supplier_id
+      LEFT JOIN public.contracts svc ON svc.id = b.service_id
       LEFT JOIN public.exchange_rates er ON er.country_id = u.country_id AND er.year = b.year AND er.month = 0
       WHERE b.year = $1 - 1 AND b.is_active = true ${B}
     ),
@@ -85,7 +84,7 @@ export async function GET(req: NextRequest) {
       SELECT b.year AS yr, SUM((${vB}))::float AS budget
       FROM public.budget_lines b
       JOIN public.units u ON u.id = b.unit_id
-      LEFT JOIN public.suppliers s ON s.id = b.supplier_id
+      LEFT JOIN public.contracts svc ON svc.id = b.service_id
       LEFT JOIN public.exchange_rates er ON er.country_id = u.country_id AND er.year = b.year AND er.month = 0
       WHERE b.year BETWEEN $1 - 3 AND $1 AND b.is_active = true ${B}
       GROUP BY b.year
@@ -113,14 +112,11 @@ export async function GET(req: NextRequest) {
       'bySupplier', (
         SELECT COALESCE(json_agg(row_to_json(t) ORDER BY t.budget DESC), '[]')
         FROM (
-          SELECT s.id, s.name, st.name AS type_name, s.cost_class::text AS cost_class,
-                 to_char(s.contract_start,'YYYY-MM-DD') AS contract_start,
-                 to_char(s.contract_end,'YYYY-MM-DD')   AS contract_end,
-                 to_char(s.payment_due_date,'YYYY-MM-DD') AS payment_due_date,
+          SELECT s.id, s.name, st.name AS type_name,
                  SUM(base.val) AS budget
           FROM base JOIN public.suppliers s ON s.id = base.supplier_id
           LEFT JOIN public.supplier_types st ON st.id = s.supplier_type_id
-          GROUP BY s.id, s.name, st.name, s.cost_class, s.contract_start, s.contract_end, s.payment_due_date
+          GROUP BY s.id, s.name, st.name
           HAVING SUM(base.val) <> 0
         ) t
       ),

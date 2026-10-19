@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
            c.name  AS category_name,
            COALESCE(s.short_name, s.name) AS supplier_name,
            p.name  AS project_name,
-           s.cost_class::text AS cost_class,
+           ct.cost_class::text AS cost_class,
            co.name AS country_name,
            pl.name AS platform_name,
            ud.code AS unidade_code, ud.name AS unidade_nome
@@ -33,6 +33,12 @@ export async function GET(req: NextRequest) {
     LEFT JOIN public.categories c  ON c.id  = v.category_id
     LEFT JOIN public.suppliers  s  ON s.id  = v.supplier_id
     LEFT JOIN public.projects   p  ON p.id  = v.project_id
+    LEFT JOIN LATERAL (
+      SELECT ct.cost_class FROM public.contracts ct
+      WHERE ct.is_active=true AND ct.supplier_id = v.supplier_id
+        AND ct.category_id IS NOT DISTINCT FROM v.category_id
+      ORDER BY (ct.unit_id = v.unit_id) DESC NULLS LAST, ct.created_at DESC
+      LIMIT 1) ct ON true
     LEFT JOIN public.countries  co ON co.id = u.country_id
     LEFT JOIN public.platforms  pl ON pl.id = co.platform_id
     LEFT JOIN public.unidades   ud ON ud.id = u.unidade_id

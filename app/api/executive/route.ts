@@ -47,11 +47,11 @@ export async function GET(req: NextRequest) {
   const sql = `
     WITH bl AS (
       SELECT b.month,
-             COALESCE(b.cost_class, s.cost_class::text, cat.cost_class) AS cost_class,
+             COALESCE(b.cost_class, svc.cost_class::text, cat.cost_class) AS cost_class,
              (${conv('b.value')})::float AS val
       FROM public.budget_lines b
       JOIN public.units u ON u.id = b.unit_id
-      LEFT JOIN public.suppliers s ON s.id = b.supplier_id
+      LEFT JOIN public.contracts svc ON svc.id = b.service_id
       LEFT JOIN public.categories cat ON cat.id = b.category_id
       LEFT JOIN public.exchange_rates er ON er.country_id = u.country_id AND er.year = b.year AND er.month = 0
       WHERE b.year = $1 AND b.is_active = true ${scope('b.unit_id')}

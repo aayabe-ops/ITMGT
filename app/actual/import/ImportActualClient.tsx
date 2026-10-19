@@ -27,8 +27,9 @@ interface PRow {
   error?: string
 }
 
-export default function ImportActualClient({ countries, units, categories, suppliers, projects }: {
-  countries: Opt[]; units: Opt[]; categories: Opt[]; suppliers: Opt[]; projects: Opt[]
+interface Svc { supplier_id: string; category_id: string | null; cost_class: string | null; unit_id: string | null }
+export default function ImportActualClient({ countries, units, categories, suppliers, projects, services = [] }: {
+  countries: Opt[]; units: Opt[]; categories: Opt[]; suppliers: Opt[]; projects: Opt[]; services?: Svc[]
 }) {
   const now = new Date()
   const [countryId, setCountryId] = useState('')
@@ -130,10 +131,14 @@ export default function ImportActualClient({ countries, units, categories, suppl
       const unit = resolved.unit
       const s = findSup(sup) as any
       const p = findProj(proj)
-      // Herança do cadastro do fornecedor: categoria e tratamento vêm do fornecedor quando
-      // não informados no arquivo (CSV enxuto). A coluna só sobrepõe quando preenchida.
-      const c = cat ? findCat(cat) : (s?.category_id ? categories.find(x => x.id === s.category_id) : undefined)
-      const effClass = cc || (s?.cost_class ? String(s.cost_class).toUpperCase() : '')
+      // Herança do SERVIÇO: categoria e tratamento vêm do serviço do fornecedor quando não
+      // informados no arquivo (CSV enxuto). Com 1 serviço, herda direto; com vários, exige a
+      // coluna categoria. A coluna sempre sobrepõe quando preenchida.
+      const svcList = s ? services.filter(v => v.supplier_id === s.id) : []
+      const c = cat ? findCat(cat)
+        : (svcList.length === 1 && svcList[0].category_id ? categories.find(x => x.id === svcList[0].category_id) : undefined)
+      const matchedSvc = (c ? svcList.find(v => v.category_id === c.id) : undefined) || (svcList.length === 1 ? svcList[0] : undefined)
+      const effClass = cc || (matchedSvc?.cost_class ? String(matchedSvc.cost_class).toUpperCase() : '')
       const errs: string[] = []
       if (!unit) errs.push(resolved.err || `unidade/CC "${uCode}" não encontrada`)
       else {
@@ -141,7 +146,7 @@ export default function ImportActualClient({ countries, units, categories, suppl
         if (scope === 'UNIT' && unit.id !== unitId) errs.push('unidade diferente da selecionada')
       }
       if (cat && !c) errs.push(`categoria "${cat}" não encontrada`)
-      else if (!c) errs.push(sup ? `fornecedor "${sup}" sem categoria no cadastro — informe a coluna categoria` : 'sem categoria (informe fornecedor cadastrado ou a coluna categoria)')
+      else if (!c) errs.push(sup ? (svcList.length > 1 ? `fornecedor "${sup}" tem ${svcList.length} serviços — informe a coluna categoria` : `fornecedor "${sup}" sem serviço cadastrado — informe a coluna categoria`) : 'sem categoria (informe fornecedor cadastrado ou a coluna categoria)')
       if (isNaN(val)) errs.push('valor inválido')
       if (!(mo >= 1 && mo <= 12)) errs.push('mês inválido')
       if (effClass && !['CAPEX', 'OPEX', 'OTC'].includes(effClass)) errs.push(`tratamento "${effClass}" inválido`)

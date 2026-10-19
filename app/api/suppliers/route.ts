@@ -4,7 +4,7 @@ import pool from '@/lib/db'
 
 const noauth = () => NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-const FIELDS = ['name', 'short_name', 'cnpj', 'supplier_type_id', 'category_id', 'expense_mode', 'unit_id', 'cost_class', 'project_id', 'ga_group_id', 'cost_center_id', 'solution_type_id', 'contract_start', 'contract_end', 'payment_due_date', 'is_active'] as const
+const FIELDS = ['name', 'short_name', 'cnpj', 'supplier_type_id', 'is_active'] as const
 
 async function syncCountries(supplierId: string, countryIds: any) {
   if (!Array.isArray(countryIds)) return
@@ -17,24 +17,13 @@ async function syncCountries(supplierId: string, countryIds: any) {
 export async function GET() {
   const u = getCurrentUser(); if (!u) return noauth()
   const { rows } = await pool.query(`
-    SELECT s.id, s.name, s.short_name, s.cnpj, s.is_active, s.expense_mode, s.cost_class,
-           s.supplier_type_id, s.category_id, s.unit_id, s.project_id, s.ga_group_id, s.cost_center_id, s.solution_type_id,
-           gg.name AS ga_group_name, cc.name AS cost_center_name, sol.name AS solution_type_name,
-           to_char(s.contract_start, 'YYYY-MM-DD')   AS contract_start,
-           to_char(s.contract_end, 'YYYY-MM-DD')     AS contract_end,
-           to_char(s.payment_due_date, 'YYYY-MM-DD') AS payment_due_date,
-           st.name AS type_name, c.name AS category_name, u.code AS unit_code, p.name AS project_name,
+    SELECT s.id, s.name, s.short_name, s.cnpj, s.is_active, s.supplier_type_id,
+           st.name AS type_name,
            COALESCE(ARRAY(SELECT sc.country_id FROM public.supplier_countries sc WHERE sc.supplier_id = s.id), '{}') AS country_ids,
            COALESCE(ARRAY(SELECT co.code FROM public.supplier_countries sc JOIN public.countries co ON co.id = sc.country_id WHERE sc.supplier_id = s.id ORDER BY co.code), '{}') AS country_codes,
            COALESCE(ARRAY(SELECT co.name FROM public.supplier_countries sc JOIN public.countries co ON co.id = sc.country_id WHERE sc.supplier_id = s.id ORDER BY co.name), '{}') AS country_names
     FROM public.suppliers s
     LEFT JOIN public.supplier_types st ON st.id = s.supplier_type_id
-    LEFT JOIN public.categories     c  ON c.id  = s.category_id
-    LEFT JOIN public.units          u  ON u.id  = s.unit_id
-    LEFT JOIN public.projects       p  ON p.id  = s.project_id
-    LEFT JOIN public.ga_groups      gg ON gg.id = s.ga_group_id
-    LEFT JOIN public.cost_centers   cc ON cc.id = s.cost_center_id
-    LEFT JOIN public.solution_types sol ON sol.id = s.solution_type_id
     ORDER BY s.name`)
   return NextResponse.json(rows)
 }
