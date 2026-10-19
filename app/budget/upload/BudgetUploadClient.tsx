@@ -12,6 +12,7 @@ interface Props {
   categories: any[]
   suppliers: any[]
   currencies: any[]
+  services?: { supplier_id: string; category_id: string | null; cost_class: string | null; unit_id: string | null }[]
 }
 
 interface BudgetRow {
@@ -81,7 +82,7 @@ function parseMonth(raw: string): number {
   return i >= 0 ? i + 1 : 0
 }
 
-export default function BudgetUploadClient({ units, categories, suppliers, currencies }: Props) {
+export default function BudgetUploadClient({ units, categories, suppliers, currencies, services = [] }: Props) {
   const now = new Date()
   const [years, setYears] = useState<number[]>(yearOptions())
   const [year, setYear] = useState(DEFAULT_YEAR)
@@ -282,9 +283,13 @@ export default function BudgetUploadClient({ units, categories, suppliers, curre
       const resolved = resolveUnit(uCode, empresa)
       const unit = resolved.unit
       const sup = fRaw ? findSupplier(fRaw) : null
-      // Herança do cadastro: categoria e tratamento vêm do fornecedor quando não informados (CSV enxuto).
-      const cat = cCode ? findCat(cCode) : (sup?.category_id ? categories.find((x: any) => x.id === sup.category_id) : null)
-      const effClass = ccRaw || (sup?.cost_class ? String(sup.cost_class).toUpperCase() : '')
+      // Herança do SERVIÇO: categoria e tratamento vêm do serviço do fornecedor quando não
+      // informados (CSV enxuto). 1 serviço herda direto; vários exigem a coluna categoria.
+      const svcList = sup ? services.filter(v => v.supplier_id === sup.id) : []
+      const cat = cCode ? findCat(cCode)
+        : (svcList.length === 1 && svcList[0].category_id ? categories.find((x: any) => x.id === svcList[0].category_id) : null)
+      const matchedSvc = (cat ? svcList.find(v => v.category_id === cat.id) : undefined) || (svcList.length === 1 ? svcList[0] : undefined)
+      const effClass = ccRaw || (matchedSvc?.cost_class ? String(matchedSvc.cost_class).toUpperCase() : '')
       const cost_class = ['CAPEX', 'OPEX', 'OTC'].includes(effClass) ? effClass : undefined
       const cur = moRaw ? findCurrency(moRaw) : null
 
@@ -292,7 +297,7 @@ export default function BudgetUploadClient({ units, categories, suppliers, curre
       const dimErrs: string[] = []
       if (!unit) dimErrs.push(resolved.err || `Unidade/Centro de Custo "${uCode || '(vazio)'}" não encontrado no cadastro`)
       if (cCode && !cat) dimErrs.push(`categoria "${cCode}" não existe no cadastro`)
-      else if (!cat) dimErrs.push(fRaw ? `fornecedor "${fRaw}" sem categoria no cadastro — informe a coluna categoria` : 'sem categoria (informe fornecedor cadastrado ou a coluna categoria)')
+      else if (!cat) dimErrs.push(fRaw ? (svcList.length > 1 ? `fornecedor "${fRaw}" tem ${svcList.length} serviços — informe a coluna categoria` : `fornecedor "${fRaw}" sem serviço cadastrado — informe a coluna categoria`) : 'sem categoria (informe fornecedor cadastrado ou a coluna categoria)')
       if (moRaw && !cur) dimErrs.push(`moeda "${moRaw}" não existe no cadastro`)
       // avisos (NÃO bloqueiam): fornecedor inexistente → carrega sem fornecedor (vincular depois)
       const warns: string[] = []
