@@ -10,12 +10,12 @@ const money = (n: number, cur = 'USD') => { try { return new Intl.NumberFormat('
 
 const empty = {
   id: '', code: '', name: '', supplier_id: '', unit_id: '', category_id: '', cost_center_id: '', currency_id: '',
-  cost_class: 'OPEX', expense_mode: 'DIRETO', total_value: '', monthly_value: '', periodicity: 'MENSAL',
+  cost_class: 'OPEX', expense_mode: 'DIRETO', solution_type_id: '', total_value: '', monthly_value: '', periodicity: 'MENSAL',
   start_date: '', end_date: '', payment_due_date: '', readjust_index: '', readjust_month: '', notes: '',
 }
 
-export default function ContractsClient({ suppliers, units, categories, costCenters, currencies }: {
-  suppliers: Opt[]; units: Opt[]; categories: Opt[]; costCenters: Opt[]; currencies: Opt[]
+export default function ContractsClient({ suppliers, units, categories, costCenters, currencies, solutionTypes = [] }: {
+  suppliers: Opt[]; units: Opt[]; categories: Opt[]; costCenters: Opt[]; currencies: Opt[]; solutionTypes?: Opt[]
 }) {
   const [list, setList] = useState<any[]>([])
   const [form, setForm] = useState<any>({ ...empty })
@@ -52,7 +52,7 @@ export default function ContractsClient({ suppliers, units, categories, costCent
       total_value: c.total_value ?? '', monthly_value: c.monthly_value ?? '',
       readjust_month: c.readjust_month ?? '', code: c.code ?? '', notes: c.notes ?? '',
       supplier_id: c.supplier_id ?? '', unit_id: c.unit_id ?? '', category_id: c.category_id ?? '',
-      cost_center_id: c.cost_center_id ?? '', currency_id: c.currency_id ?? '',
+      cost_center_id: c.cost_center_id ?? '', currency_id: c.currency_id ?? '', solution_type_id: c.solution_type_id ?? '',
       start_date: c.start_date ?? '', end_date: c.end_date ?? '', payment_due_date: c.payment_due_date ?? '', readjust_index: c.readjust_index ?? '',
     })
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -136,6 +136,11 @@ export default function ContractsClient({ suppliers, units, categories, costCent
           <div><label className="label">Modo</label>
             <select className="input" value={form.expense_mode} onChange={e => set('expense_mode', e.target.value)}>
               <option value="DIRETO">Direto (CC fixo)</option><option value="RATEIO">Rateio entre unidades</option>
+            </select>
+          </div>
+          <div><label className="label">Área de TI</label>
+            <select className="input" value={form.solution_type_id} onChange={e => set('solution_type_id', e.target.value)}>
+              <option value="">—</option>{solutionTypes.map(st => <option key={st.id} value={st.id}>{st.name}</option>)}
             </select>
           </div>
           <div><label className="label">Periodicidade</label>

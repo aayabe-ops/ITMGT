@@ -62,11 +62,12 @@ export async function GET(req: NextRequest) {
   const sql = `
     WITH base AS (
       SELECT b.month, b.category_id, b.supplier_id, b.unit_id, u.country_id, u.company_id,
-             COALESCE(b.cost_class, svc.cost_class)::text AS cost_class, cur.code AS currency_code, NULL::text AS solution_type,
+             COALESCE(b.cost_class, svc.cost_class)::text AS cost_class, cur.code AS currency_code, sol.name AS solution_type,
              (${vB})::float AS val
       FROM public.budget_lines b
       JOIN public.units u ON u.id = b.unit_id
       LEFT JOIN public.contracts svc ON svc.id = b.service_id
+      LEFT JOIN public.solution_types sol ON sol.id = svc.solution_type_id
       LEFT JOIN public.currencies cur ON cur.id = b.currency_id
       LEFT JOIN public.exchange_rates er ON er.country_id = u.country_id AND er.year = b.year AND er.month = 0
       WHERE b.year = $1 AND b.is_active = true ${B}

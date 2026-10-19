@@ -5,14 +5,14 @@ import pool from '@/lib/db'
 const noauth = () => NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
 const FIELDS = ['code', 'name', 'supplier_id', 'unit_id', 'category_id', 'cost_center_id', 'currency_id',
-  'cost_class', 'expense_mode', 'total_value', 'monthly_value', 'periodicity', 'start_date', 'end_date',
+  'cost_class', 'expense_mode', 'solution_type_id', 'total_value', 'monthly_value', 'periodicity', 'start_date', 'end_date',
   'payment_due_date', 'readjust_index', 'readjust_month', 'notes', 'is_active'] as const
 
 export async function GET() {
   const u = getCurrentUser(); if (!u) return noauth()
   const { rows } = await pool.query(`
     SELECT ct.id, ct.code, ct.name, ct.supplier_id, ct.unit_id, ct.category_id, ct.cost_center_id, ct.currency_id,
-           ct.cost_class::text AS cost_class, ct.expense_mode, ct.total_value, ct.monthly_value, ct.periodicity,
+           ct.cost_class::text AS cost_class, ct.expense_mode, ct.solution_type_id, ct.total_value, ct.monthly_value, ct.periodicity,
            to_char(ct.start_date,'YYYY-MM-DD') AS start_date,
            to_char(ct.end_date,'YYYY-MM-DD')   AS end_date,
            to_char(ct.payment_due_date,'YYYY-MM-DD') AS payment_due_date,
