@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser, canManageBudget } from '@/lib/auth'
 import pool from '@/lib/db'
+import { writableUnitIds, outOfScopeMsg } from '@/lib/scope'
 
 // Espera: { rows: [{ unit_id, category_id, supplier_id?, project_id?, year?, month, value }], year? }
 // Cada linha vira uma nova versão ativa em budget_lines para a chave
@@ -18,6 +19,14 @@ export async function POST(req: NextRequest) {
 
   const defaultYear = parseInt(data.year) || new Date().getFullYear()
 
+  // 6b — escopo geográfico de escrita (Gerente). Barra linhas fora do escopo e,
+  // no replace_year, restringe o DELETE às unidades do usuário (não apaga outras regiões).
+  const wScope = await writableUnitIds(user)
+  if (wScope) {
+    const bad = new Set((data.rows as any[]).map(r => r.unit_id).filter((id: string) => id && !wScope.has(id)))
+    if (bad.size) return NextResponse.json({ error: outOfScopeMsg(bad.size) }, { status: 403 })
+  }
+
   // OPEX/CAPEX/OTC definido no LANÇAMENTO (linha); a categoria é só o padrão. Fornecedor NÃO define.
   const CC_SET = ['CAPEX', 'OPEX', 'OTC']
   const normCC = (v: any) => { const s = String(v || '').toUpperCase().trim(); return CC_SET.includes(s) ? s : null }
@@ -34,7 +43,8 @@ export async function POST(req: NextRequest) {
     const client = await pool.connect()
     try {
       await client.query('BEGIN')
-      await client.query('DELETE FROM public.budget_lines WHERE year = $1', [defaultYear])
+      if (wScope) await client.query('DELETE FROM public.budget_lines WHERE year=$1 AND unit_id = ANY($2::uuid[])', [defaultYear, [...wScope]])
+      else await client.query('DELETE FROM public.budget_lines WHERE year = $1', [defaultYear])
       // O índice único budget_lines_uk inclui `version`. Linhas-item distintas na
       // mesma célula (unidade/categoria/fornecedor/projeto/mês) recebem versões
       // incrementais para coexistirem (todas ativas); a view soma todas.

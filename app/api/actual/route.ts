@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser, canLancar } from '@/lib/auth'
 import pool from '@/lib/db'
+import { checkUnitsWritable, outOfScopeMsg } from '@/lib/scope'
 import { applyRateioActual, loadActualRuleMatcher, type ActualRuleMatcher } from '@/lib/rateioEngine'
 
 const noauth = () => NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
@@ -60,6 +61,10 @@ export async function POST(req: NextRequest) {
   const b: any = await req.json().catch(() => null)
   const rows: any[] = Array.isArray(b?.rows) ? b.rows : (b ? [b] : [])
   if (!rows.length) return NextResponse.json({ error: 'Nenhum lançamento.' }, { status: 400 })
+
+  // 6b — escopo geográfico de escrita (Analista/Gerente)
+  const scope = await checkUnitsWritable(user, rows.map(r => r.unit_id))
+  if (!scope.ok) return NextResponse.json({ error: outOfScopeMsg(scope.count) }, { status: 403 })
 
   const client = await pool.connect()
   let ok = 0, err = 0; const errors: string[] = []
@@ -131,6 +136,11 @@ export async function PUT(req: NextRequest) {
   const b: any = await req.json().catch(() => null)
   const id = b?.id
   if (!id) return NextResponse.json({ error: 'ID obrigatório' }, { status: 400 })
+  {
+    const { rows: [ln] } = await pool.query('SELECT unit_id FROM public.actual_lines WHERE id=$1', [id])
+    const sc = await checkUnitsWritable(user, [ln?.unit_id])
+    if (!sc.ok) return NextResponse.json({ error: outOfScopeMsg(sc.count) }, { status: 403 })
+  }
   const status = String(b?.payment_status || '').toUpperCase() === 'PAID' ? 'PAID' : 'ACCRUED'
   await pool.query(
     `UPDATE public.actual_lines
@@ -146,6 +156,11 @@ export async function DELETE(req: NextRequest) {
   const b: any = await req.json().catch(() => null)
   const id = b?.id || new URL(req.url).searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'ID obrigatório' }, { status: 400 })
+  {
+    const { rows: [ln] } = await pool.query('SELECT unit_id FROM public.actual_lines WHERE id=$1', [id])
+    const sc = await checkUnitsWritable(user, [ln?.unit_id])
+    if (!sc.ok) return NextResponse.json({ error: outOfScopeMsg(sc.count) }, { status: 403 })
+  }
   await pool.query('DELETE FROM public.actual_lines WHERE id=$1', [id])
   return NextResponse.json({ ok: true })
 }

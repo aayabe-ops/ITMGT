@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser, canLancar } from '@/lib/auth'
 import pool from '@/lib/db'
+import { checkUnitsWritable, outOfScopeMsg } from '@/lib/scope'
 import { applyRateioActual, loadActualRuleMatcher, type ActualRuleMatcher } from '@/lib/rateioEngine'
 
 // Importa lançamentos de Realizado (CSV já resolvido pelo cliente) e registra o lote.
@@ -20,6 +21,10 @@ export async function POST(req: NextRequest) {
   if (!(year > 0) || !(month >= 1 && month <= 12)) {
     return NextResponse.json({ error: 'Ano/mês inválidos.' }, { status: 400 })
   }
+
+  // 6b — escopo geográfico de escrita (Analista/Gerente)
+  const geoScope = await checkUnitsWritable(user, b.rows.map((r: any) => r.unit_id))
+  if (!geoScope.ok) return NextResponse.json({ error: outOfScopeMsg(geoScope.count) }, { status: 403 })
 
   const client = await pool.connect()
   try {
