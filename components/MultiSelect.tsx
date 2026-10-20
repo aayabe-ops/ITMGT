@@ -41,7 +41,19 @@ export default function MultiSelect({
         <div className="absolute z-30 mt-1 w-full max-h-56 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg py-1">
           {options.length === 0 ? (
             <p className="px-3 py-2 text-xs text-slate-400">{emptyHint || 'Nenhuma opção'}</p>
-          ) : options.map(o => {
+          ) : (() => {
+            const ids = options.map(o => o.id)
+            const allOn = ids.every(id => value.includes(id))
+            return (
+              <button type="button"
+                onClick={() => onChange(allOn ? value.filter(id => !ids.includes(id)) : [...new Set([...value, ...ids])])}
+                className="w-full sticky top-0 bg-white flex items-center justify-between px-3 py-1.5 text-xs font-medium text-slate-500 border-b border-slate-100 hover:bg-slate-50">
+                <span>{allOn ? 'Limpar seleção' : 'Marcar todos'}</span>
+                <span className="text-slate-400">{ids.filter(id => value.includes(id)).length}/{options.length}</span>
+              </button>
+            )
+          })()}
+          {options.map(o => {
             const on = value.includes(o.id)
             return (
               <button type="button" key={o.id} onClick={() => toggle(o.id)}
