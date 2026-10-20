@@ -85,7 +85,7 @@ export default function SuppliersClient({ types, categories, projects, units, co
   const setPlatforms = (ids: string[]) => setForm((f: any) => {
     const allowed = ids.length ? new Set(countries.filter(c => c.platform_id && ids.includes(c.platform_id!)).map(c => c.id)) : null
     return { ...f, platform_ids: ids, country_ids: allowed ? f.country_ids.filter((cid: string) => allowed.has(cid)) : f.country_ids }
-  }
+  })
   const setCountries = (ids: string[]) => setForm((f: any) => ({ ...f, country_ids: ids }))
 
   async function submit(e: React.FormEvent) {
