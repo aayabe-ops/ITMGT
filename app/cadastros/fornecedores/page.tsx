@@ -14,7 +14,7 @@ export default async function Page() {
     pool.query('SELECT id, name FROM public.categories WHERE is_active=true ORDER BY name'),
     pool.query('SELECT id, code, name FROM public.projects WHERE is_active=true ORDER BY name'),
     pool.query('SELECT id, code, name FROM public.units WHERE is_active=true ORDER BY code'),
-    pool.query(`SELECT co.id, co.code, co.name, pl.name AS platform_name
+    pool.query(`SELECT co.id, co.code, co.name, co.platform_id, pl.name AS platform_name
                   FROM public.countries co LEFT JOIN public.platforms pl ON pl.id = co.platform_id
                  WHERE co.is_active=true ORDER BY co.name`),
     pool.query('SELECT id, name FROM public.ga_groups WHERE is_active=true ORDER BY name'),

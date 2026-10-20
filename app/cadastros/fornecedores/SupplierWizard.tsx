@@ -3,8 +3,9 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { X, ArrowLeft, ArrowRight, Check, Share2, CheckCircle2, AlertTriangle, Plus } from 'lucide-react'
 import clsx from 'clsx'
+import MultiSelect from '@/components/MultiSelect'
 
-interface Opt { id: string; name: string; code?: string }
+interface Opt { id: string; name: string; code?: string; platform_id?: string | null }
 type Props = {
   types: Opt[]; categories: Opt[]; projects: Opt[]; units: Opt[]; countries: Opt[]; solutionTypes: Opt[]; currencies: Opt[]
   platforms?: Opt[]
@@ -65,8 +66,14 @@ export default function SupplierWizard({ types, categories, projects, units, cou
   const fromScratch = () => { clearDraft(); setF({ ...EMPTY_FORM }); setStep(1); setRestored(false) }
 
   const set = (k: string, v: any) => setF(p => ({ ...p, [k]: v }))
-  const toggleCountry = (id: string) => setF(p => ({ ...p, country_ids: p.country_ids.includes(id) ? p.country_ids.filter(x => x !== id) : [...p.country_ids, id] }))
-  const togglePlatform = (id: string) => setF(p => ({ ...p, platform_ids: p.platform_ids.includes(id) ? p.platform_ids.filter(x => x !== id) : [...p.platform_ids, id] }))
+  const countriesForPlatforms = f.platform_ids.length
+    ? countries.filter(c => c.platform_id && f.platform_ids.includes(c.platform_id))
+    : countries
+  const setPlatforms = (ids: string[]) => setF(p => {
+    const allowed = ids.length ? new Set(countries.filter(c => c.platform_id && ids.includes(c.platform_id!)).map(c => c.id)) : null
+    return { ...p, platform_ids: ids, country_ids: allowed ? p.country_ids.filter(cid => allowed.has(cid)) : p.country_ids }
+  })
+  const setCountries = (ids: string[]) => setF(p => ({ ...p, country_ids: ids }))
 
   const isRateio = f.expense_mode === 'RATEIO'
   const catName = categories.find(c => c.id === f.category_id)?.name
@@ -199,30 +206,17 @@ export default function SupplierWizard({ types, categories, projects, units, cou
                       <option value="">—</option>{types.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                     </select>
                   </Field>
-                  <Field label="Países atendidos *" hint="onde este fornecedor pode ter custo">
-                    {countries.length === 0 ? <p className="text-xs text-amber-600">Cadastre países primeiro.</p> : (
-                      <div className="flex flex-wrap gap-2">
-                        {countries.map(c => {
-                          const on = f.country_ids.includes(c.id)
-                          return <button type="button" key={c.id} onClick={() => toggleCountry(c.id)}
-                            className={clsx('px-3 py-1 rounded-full text-xs font-medium border transition-colors', on ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400')}>
-                            {c.code ? `${c.code} — ${c.name}` : c.name}</button>
-                        })}
-                      </div>
-                    )}
-                  </Field>
-                  {platforms.length > 0 && (
-                    <Field label="Plataformas atendidas" hint="opcional — uma ou mais plataformas">
-                      <div className="flex flex-wrap gap-2">
-                        {platforms.map(p => {
-                          const on = f.platform_ids.includes(p.id)
-                          return <button type="button" key={p.id} onClick={() => togglePlatform(p.id)}
-                            className={clsx('px-3 py-1 rounded-full text-xs font-medium border transition-colors', on ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-400')}>
-                            {p.name}</button>
-                        })}
-                      </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Field label="Plataformas atendidas" hint="opcional — uma ou mais">
+                      <MultiSelect accent="violet" options={platforms} value={f.platform_ids} onChange={setPlatforms}
+                        placeholder="Selecione a(s) plataforma(s)…" emptyHint="Cadastre plataformas primeiro" />
                     </Field>
-                  )}
+                    <Field label="Países atendidos *" hint="onde este fornecedor pode ter custo">
+                      <MultiSelect options={countriesForPlatforms} value={f.country_ids} onChange={setCountries}
+                        placeholder={f.platform_ids.length ? 'Selecione o(s) país(es)…' : 'Todos — ou escolha a plataforma primeiro'}
+                        emptyHint="Nenhum país nas plataformas escolhidas" />
+                    </Field>
+                  </div>
                 </div>
               )}
 

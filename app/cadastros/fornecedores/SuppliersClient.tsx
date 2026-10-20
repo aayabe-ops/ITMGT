@@ -4,9 +4,10 @@ import { Plus, Trash2, Pencil, X, Upload, Download, Search, Wand2, FileSignature
 import clsx from 'clsx'
 import { csvDownload, norm, readTable } from '@/lib/csv'
 import GuideCard from '@/components/GuideCard'
+import MultiSelect from '@/components/MultiSelect'
 import SupplierWizard from './SupplierWizard'
 
-interface Opt { id: string; name: string; code?: string; platform_name?: string | null }
+interface Opt { id: string; name: string; code?: string; platform_id?: string | null; platform_name?: string | null }
 interface Supplier {
   id: string; name: string; short_name: string | null; cnpj: string | null; is_active: boolean
   supplier_type_id: string | null; type_name: string | null
@@ -77,12 +78,15 @@ export default function SuppliersClient({ types, categories, projects, units, co
 
   const set = (k: string, v: string) => setForm((f: any) => ({ ...f, [k]: v }))
   const reset = () => { setForm({ ...empty, country_ids: [], platform_ids: [] }); setErr('') }
-  const toggleCountry = (id: string) => setForm((f: any) => ({
-    ...f, country_ids: f.country_ids.includes(id) ? f.country_ids.filter((x: string) => x !== id) : [...f.country_ids, id],
-  }))
-  const togglePlatform = (id: string) => setForm((f: any) => ({
-    ...f, platform_ids: f.platform_ids.includes(id) ? f.platform_ids.filter((x: string) => x !== id) : [...f.platform_ids, id],
-  }))
+  // País segue a plataforma: lista filtrada pelas plataformas escolhidas (todas se nenhuma).
+  const countriesForPlatforms = form.platform_ids.length
+    ? countries.filter(c => c.platform_id && form.platform_ids.includes(c.platform_id))
+    : countries
+  const setPlatforms = (ids: string[]) => setForm((f: any) => {
+    const allowed = ids.length ? new Set(countries.filter(c => c.platform_id && ids.includes(c.platform_id!)).map(c => c.id)) : null
+    return { ...f, platform_ids: ids, country_ids: allowed ? f.country_ids.filter((cid: string) => allowed.has(cid)) : f.country_ids }
+  }
+  const setCountries = (ids: string[]) => setForm((f: any) => ({ ...f, country_ids: ids }))
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -176,44 +180,18 @@ export default function SuppliersClient({ types, categories, projects, units, co
           </div>
         </div>
 
-        <div className="mt-4">
-          <label className="label">Países atendidos</label>
-          {countries.length === 0 ? (
-            <p className="text-xs text-amber-600">Cadastre países primeiro (Cadastros → Países).</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {countries.map(c => {
-                const on = form.country_ids.includes(c.id)
-                return (
-                  <button type="button" key={c.id} onClick={() => toggleCountry(c.id)}
-                    className={clsx('px-3 py-1 rounded-full text-xs font-medium border transition-colors',
-                      on ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400')}>
-                    {c.code ? `${c.code} — ${c.name}` : c.name}
-                  </button>
-                )
-              })}
-            </div>
-          )}
-        </div>
-
-        <div className="mt-4">
-          <label className="label">Plataformas atendidas</label>
-          {platforms.length === 0 ? (
-            <p className="text-xs text-amber-600">Cadastre plataformas primeiro (Cadastros → Plataformas).</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {platforms.map(p => {
-                const on = form.platform_ids.includes(p.id)
-                return (
-                  <button type="button" key={p.id} onClick={() => togglePlatform(p.id)}
-                    className={clsx('px-3 py-1 rounded-full text-xs font-medium border transition-colors',
-                      on ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-400')}>
-                    {p.name}
-                  </button>
-                )
-              })}
-            </div>
-          )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div>
+            <label className="label">Plataformas atendidas</label>
+            <MultiSelect accent="violet" options={platforms} value={form.platform_ids} onChange={setPlatforms}
+              placeholder="Selecione a(s) plataforma(s)…" emptyHint="Cadastre plataformas primeiro" />
+          </div>
+          <div>
+            <label className="label">Países atendidos</label>
+            <MultiSelect options={countriesForPlatforms} value={form.country_ids} onChange={setCountries}
+              placeholder={form.platform_ids.length ? 'Selecione o(s) país(es)…' : 'Todos — ou escolha a plataforma primeiro'}
+              emptyHint="Nenhum país nas plataformas escolhidas" />
+          </div>
         </div>
 
         <p className="text-xs text-slate-400 mt-4 border-t border-slate-100 pt-3">Categoria, modo (direto/rateio), unidade, classe e vencimento ficam em cada <b>Serviço</b> deste fornecedor — use o ícone de Serviços na lista abaixo.</p>
