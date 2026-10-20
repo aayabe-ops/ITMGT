@@ -7,13 +7,14 @@ import clsx from 'clsx'
 interface Opt { id: string; name: string; code?: string }
 type Props = {
   types: Opt[]; categories: Opt[]; projects: Opt[]; units: Opt[]; countries: Opt[]; solutionTypes: Opt[]; currencies: Opt[]
+  platforms?: Opt[]
   onClose: () => void; onDone: () => void
 }
 
 const STEPS = ['Identificação', 'Serviço', 'Como rateia', 'Contrato', 'Revisar']
 const DRAFT_KEY = 'supplier_wizard_draft'
 const EMPTY_FORM = {
-  name: '', short_name: '', supplier_type_id: '', country_ids: [] as string[],
+  name: '', short_name: '', supplier_type_id: '', country_ids: [] as string[], platform_ids: [] as string[],
   category_id: '', cost_class: 'OPEX', solution_type_id: '', project_id: '',
   expense_mode: 'DIRETO', unit_id: '',
   contract_start: '', contract_end: '', payment_due_date: '', monthly_value: '', currency_id: '',
@@ -43,7 +44,7 @@ function PrereqNote({ what, href }: { what: string; href: string }) {
   )
 }
 
-export default function SupplierWizard({ types, categories, projects, units, countries, solutionTypes, currencies, onClose, onDone }: Props) {
+export default function SupplierWizard({ types, categories, projects, units, countries, platforms = [], solutionTypes, currencies, onClose, onDone }: Props) {
   const [step, setStep] = useState(1)
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
@@ -65,6 +66,7 @@ export default function SupplierWizard({ types, categories, projects, units, cou
 
   const set = (k: string, v: any) => setF(p => ({ ...p, [k]: v }))
   const toggleCountry = (id: string) => setF(p => ({ ...p, country_ids: p.country_ids.includes(id) ? p.country_ids.filter(x => x !== id) : [...p.country_ids, id] }))
+  const togglePlatform = (id: string) => setF(p => ({ ...p, platform_ids: p.platform_ids.includes(id) ? p.platform_ids.filter(x => x !== id) : [...p.platform_ids, id] }))
 
   const isRateio = f.expense_mode === 'RATEIO'
   const catName = categories.find(c => c.id === f.category_id)?.name
@@ -102,7 +104,7 @@ export default function SupplierWizard({ types, categories, projects, units, cou
       const sup: any = {
         name: f.name.trim(), short_name: f.short_name || null,
         supplier_type_id: f.supplier_type_id || null,
-        country_ids: f.country_ids,
+        country_ids: f.country_ids, platform_ids: f.platform_ids,
       }
       const r = await fetch('/api/suppliers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(sup) })
       const d = await r.json().catch(() => ({}))
@@ -209,6 +211,18 @@ export default function SupplierWizard({ types, categories, projects, units, cou
                       </div>
                     )}
                   </Field>
+                  {platforms.length > 0 && (
+                    <Field label="Plataformas atendidas" hint="opcional — uma ou mais plataformas">
+                      <div className="flex flex-wrap gap-2">
+                        {platforms.map(p => {
+                          const on = f.platform_ids.includes(p.id)
+                          return <button type="button" key={p.id} onClick={() => togglePlatform(p.id)}
+                            className={clsx('px-3 py-1 rounded-full text-xs font-medium border transition-colors', on ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-400')}>
+                            {p.name}</button>
+                        })}
+                      </div>
+                    </Field>
+                  )}
                 </div>
               )}
 

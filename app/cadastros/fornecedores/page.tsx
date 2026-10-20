@@ -22,11 +22,12 @@ export default async function Page() {
     pool.query('SELECT id, name FROM public.solution_types WHERE is_active=true ORDER BY name'),
     pool.query('SELECT id, code, name FROM public.currencies WHERE is_active=true ORDER BY code'),
   ])
+  const platforms = await pool.query('SELECT id, name FROM public.platforms WHERE is_active=true ORDER BY name')
 
   return (
     <Layout user={user}>
       <SuppliersClient types={types.rows} categories={cats.rows} projects={projs.rows} units={units.rows}
-        countries={countries.rows} gaGroups={gaGroups.rows} costCenters={costCenters.rows} solutionTypes={solutionTypes.rows}
+        countries={countries.rows} platforms={platforms.rows} gaGroups={gaGroups.rows} costCenters={costCenters.rows} solutionTypes={solutionTypes.rows}
         currencies={currencies.rows} />
     </Layout>
   )

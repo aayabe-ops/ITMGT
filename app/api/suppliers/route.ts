@@ -14,6 +14,14 @@ async function syncCountries(supplierId: string, countryIds: any) {
   }
 }
 
+async function syncPlatforms(supplierId: string, platformIds: any) {
+  if (!Array.isArray(platformIds)) return
+  await pool.query('DELETE FROM public.supplier_platforms WHERE supplier_id=$1', [supplierId])
+  for (const pid of platformIds) {
+    if (pid) await pool.query('INSERT INTO public.supplier_platforms(supplier_id, platform_id) VALUES($1,$2) ON CONFLICT DO NOTHING', [supplierId, pid])
+  }
+}
+
 export async function GET() {
   const u = getCurrentUser(); if (!u) return noauth()
   const { rows } = await pool.query(`
@@ -21,7 +29,9 @@ export async function GET() {
            st.name AS type_name,
            COALESCE(ARRAY(SELECT sc.country_id FROM public.supplier_countries sc WHERE sc.supplier_id = s.id), '{}') AS country_ids,
            COALESCE(ARRAY(SELECT co.code FROM public.supplier_countries sc JOIN public.countries co ON co.id = sc.country_id WHERE sc.supplier_id = s.id ORDER BY co.code), '{}') AS country_codes,
-           COALESCE(ARRAY(SELECT co.name FROM public.supplier_countries sc JOIN public.countries co ON co.id = sc.country_id WHERE sc.supplier_id = s.id ORDER BY co.name), '{}') AS country_names
+           COALESCE(ARRAY(SELECT co.name FROM public.supplier_countries sc JOIN public.countries co ON co.id = sc.country_id WHERE sc.supplier_id = s.id ORDER BY co.name), '{}') AS country_names,
+           COALESCE(ARRAY(SELECT sp.platform_id FROM public.supplier_platforms sp WHERE sp.supplier_id = s.id), '{}') AS platform_ids,
+           COALESCE(ARRAY(SELECT pl.name FROM public.supplier_platforms sp JOIN public.platforms pl ON pl.id = sp.platform_id WHERE sp.supplier_id = s.id ORDER BY pl.name), '{}') AS platform_names
     FROM public.suppliers s
     LEFT JOIN public.supplier_types st ON st.id = s.supplier_type_id
     ORDER BY s.name`)
@@ -38,6 +48,7 @@ export async function POST(req: NextRequest) {
   try {
     const { rows } = await pool.query(`INSERT INTO public.suppliers(${cols.join(',')}) VALUES(${ph.join(',')}) RETURNING id`, vals)
     await syncCountries(rows[0].id, b.country_ids)
+    await syncPlatforms(rows[0].id, b.platform_ids)
     return NextResponse.json(rows[0])
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'Erro ao inserir.' }, { status: 400 })
@@ -55,6 +66,7 @@ export async function PATCH(req: NextRequest) {
   try {
     if (sets.length) await pool.query(`UPDATE public.suppliers SET ${sets.join(',')} WHERE id=$${i}`, vals)
     if ('country_ids' in b) await syncCountries(b.id, b.country_ids)
+    if ('platform_ids' in b) await syncPlatforms(b.id, b.platform_ids)
     return NextResponse.json({ ok: true })
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'Erro ao atualizar.' }, { status: 400 })

@@ -11,14 +11,15 @@ interface Supplier {
   id: string; name: string; short_name: string | null; cnpj: string | null; is_active: boolean
   supplier_type_id: string | null; type_name: string | null
   country_ids: string[]; country_codes: string[]; country_names?: string[]
+  platform_ids: string[]; platform_names?: string[]
 }
 
 const empty = {
-  id: '', name: '', short_name: '', cnpj: '', supplier_type_id: '', country_ids: [] as string[],
+  id: '', name: '', short_name: '', cnpj: '', supplier_type_id: '', country_ids: [] as string[], platform_ids: [] as string[],
 }
 
-export default function SuppliersClient({ types, categories, projects, units, countries, solutionTypes, currencies = [] }: {
-  types: Opt[]; categories: Opt[]; projects: Opt[]; units: Opt[]; countries: Opt[]; gaGroups?: Opt[]; costCenters?: Opt[]; solutionTypes: Opt[]; currencies?: Opt[]
+export default function SuppliersClient({ types, categories, projects, units, countries, platforms = [], solutionTypes, currencies = [] }: {
+  types: Opt[]; categories: Opt[]; projects: Opt[]; units: Opt[]; countries: Opt[]; platforms?: Opt[]; gaGroups?: Opt[]; costCenters?: Opt[]; solutionTypes: Opt[]; currencies?: Opt[]
 }) {
   const [wizard, setWizard] = useState(false)
   const [list, setList] = useState<Supplier[]>([])
@@ -33,10 +34,10 @@ export default function SuppliersClient({ types, categories, projects, units, co
 
   function downloadTemplate() {
     csvDownload('modelo_fornecedores.csv',
-      'nome,nome_curto,cnpj,tipo,paises',
+      'nome,nome_curto,cnpj,tipo,plataformas,paises',
       [
-        'ACME LTDA,ACME,12.345.678/0001-90,Software,BR|UY',
-        'Contoso SA,Contoso,,Telecom,BR',
+        'ACME LTDA,ACME,12.345.678/0001-90,Software,Andina|Cono Sur,BR|UY',
+        'Contoso SA,Contoso,,Telecom,Andina,BR',
       ])
   }
   async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
@@ -47,6 +48,7 @@ export default function SuppliersClient({ types, categories, projects, units, co
     const iNome = col('nome', 'name'), iShort = col('nomecurto', 'shortname', 'apelido')
     const iCnpj = col('cnpj', 'documento', 'taxid')
     const iTipo = col('tipo', 'type', 'grupo'), iPais = col('paises', 'countries', 'pais')
+    const iPlat = col('plataformas', 'platforms', 'plataforma')
     if (iNome < 0) { setErr('CSV inválido: precisa da coluna "nome".'); e.target.value = ''; return }
     const byName = (arr: Opt[], v: string) => { const k = norm(v); return arr.find(o => norm(o.name) === k) }
     const byCode = (arr: Opt[], v: string) => { const k = norm(v); return arr.find(o => norm((o as any).code || '') === k) || byName(arr, v) }
@@ -58,6 +60,7 @@ export default function SuppliersClient({ types, categories, projects, units, co
         name, short_name: g(iShort) || null, cnpj: g(iCnpj) || null,
         supplier_type_id: byName(types, g(iTipo))?.id || null,
         country_ids: g(iPais).split('|').map(s => byCode(countries, s.trim())?.id).filter(Boolean),
+        platform_ids: g(iPlat).split('|').map(s => byName(platforms, s.trim())?.id).filter(Boolean),
       }
       const res = await fetch('/api/suppliers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       res.ok ? ok++ : fail++
@@ -65,8 +68,6 @@ export default function SuppliersClient({ types, categories, projects, units, co
     setImpMsg(`Importação: ${ok} fornecedor(es) criado(s)${fail ? `, ${fail} com erro` : ''}.`)
     e.target.value = ''; load()
   }
-  // Plataforma é derivada do país (country.platform_name) — exibida, não cadastrada.
-  const platformsOf = (ids: string[]) => [...new Set((ids || []).map(id => countries.find(c => c.id === id)?.platform_name).filter(Boolean))] as string[]
 
   const load = useCallback(async () => {
     const r = await fetch('/api/suppliers'); const d = await r.json()
@@ -75,9 +76,12 @@ export default function SuppliersClient({ types, categories, projects, units, co
   useEffect(() => { load() }, [load])
 
   const set = (k: string, v: string) => setForm((f: any) => ({ ...f, [k]: v }))
-  const reset = () => { setForm({ ...empty, country_ids: [] }); setErr('') }
+  const reset = () => { setForm({ ...empty, country_ids: [], platform_ids: [] }); setErr('') }
   const toggleCountry = (id: string) => setForm((f: any) => ({
     ...f, country_ids: f.country_ids.includes(id) ? f.country_ids.filter((x: string) => x !== id) : [...f.country_ids, id],
+  }))
+  const togglePlatform = (id: string) => setForm((f: any) => ({
+    ...f, platform_ids: f.platform_ids.includes(id) ? f.platform_ids.filter((x: string) => x !== id) : [...f.platform_ids, id],
   }))
 
   async function submit(e: React.FormEvent) {
@@ -96,7 +100,7 @@ export default function SuppliersClient({ types, categories, projects, units, co
   function edit(s: Supplier) {
     setForm({
       id: s.id, name: s.name, short_name: s.short_name ?? '', cnpj: s.cnpj ?? '',
-      supplier_type_id: s.supplier_type_id ?? '', country_ids: s.country_ids ?? [],
+      supplier_type_id: s.supplier_type_id ?? '', country_ids: s.country_ids ?? [], platform_ids: s.platform_ids ?? [],
     })
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -131,13 +135,13 @@ export default function SuppliersClient({ types, categories, projects, units, co
 
       {wizard && (
         <SupplierWizard types={types} categories={categories} projects={projects} units={units}
-          countries={countries} solutionTypes={solutionTypes} currencies={currencies}
+          countries={countries} platforms={platforms} solutionTypes={solutionTypes} currencies={currencies}
           onClose={() => setWizard(false)} onDone={() => { setWizard(false); load() }} />
       )}
 
       <GuideCard storageKey="/cadastros/fornecedores"
         steps={[
-          'Identidade: informe nome/abreviação, CNPJ, grupo e países atendidos (a plataforma vem do país).',
+          'Identidade: informe nome/abreviação, CNPJ, grupo e as plataformas e países atendidos.',
           'Depois de salvar, use o ícone de Serviços na lista para cadastrar o que o fornecedor presta (categoria, modo, valor e rateio em cada serviço).',
           'Os campos de categoria/modo/classe abaixo são padrões opcionais, herdados por novos serviços — podem ser ajustados por serviço.',
         ]}
@@ -190,8 +194,25 @@ export default function SuppliersClient({ types, categories, projects, units, co
               })}
             </div>
           )}
-          {platformsOf(form.country_ids).length > 0 && (
-            <p className="text-xs text-slate-500 mt-2">Plataforma <span className="text-slate-400">(derivada do país)</span>: <span className="font-medium text-slate-700">{platformsOf(form.country_ids).join(', ')}</span></p>
+        </div>
+
+        <div className="mt-4">
+          <label className="label">Plataformas atendidas</label>
+          {platforms.length === 0 ? (
+            <p className="text-xs text-amber-600">Cadastre plataformas primeiro (Cadastros → Plataformas).</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {platforms.map(p => {
+                const on = form.platform_ids.includes(p.id)
+                return (
+                  <button type="button" key={p.id} onClick={() => togglePlatform(p.id)}
+                    className={clsx('px-3 py-1 rounded-full text-xs font-medium border transition-colors',
+                      on ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-400')}>
+                    {p.name}
+                  </button>
+                )
+              })}
+            </div>
           )}
         </div>
 
@@ -235,7 +256,7 @@ export default function SuppliersClient({ types, categories, projects, units, co
                   <td className="px-4 py-2.5 text-slate-500 text-xs font-mono">{s.cnpj || '—'}</td>
                   <td className="px-4 py-2.5 text-slate-600 text-xs">{s.type_name || '—'}</td>
                   <td className="px-4 py-2.5 text-slate-600 text-xs">{(s.country_names || s.country_codes || []).join(', ') || '—'}</td>
-                  <td className="px-4 py-2.5 text-slate-500 text-xs">{platformsOf(s.country_ids).join(', ') || '—'}</td>
+                  <td className="px-4 py-2.5 text-slate-500 text-xs">{(s.platform_names || []).join(', ') || '—'}</td>
                   <td className="px-4 py-2.5 text-center text-xs">{s.is_active ? '✓' : '—'}</td>
                   <td className="px-4 py-2.5 text-right whitespace-nowrap">
                     <a href={`/cadastros/contratos?fornecedor=${s.id}`} title="Serviços deste fornecedor" className="p-1 text-slate-400 hover:text-emerald-600 inline-flex"><FileSignature className="w-4 h-4" /></a>
