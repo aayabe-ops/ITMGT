@@ -6,7 +6,8 @@ import { readMatrix } from '@/lib/csv'
 import GuideCard from '@/components/GuideCard'
 
 interface Opt { id: string; code: string; name: string }
-const empty = { id: '', code: '', name: '', descr_en: '', centro_logistico_id: '', centro_logistico_nome: '', company_id: '', divisao_id: '', divisao_nome: '', country_id: '', unidade_id: '' }
+const empty = { id: '', code: '', name: '', descr_en: '', centro_logistico_id: '', centro_logistico_nome: '', company_id: '', divisao_id: '', divisao_nome: '', country_id: '', unidade_id: '', cost_nature: 'COGS' }
+const NATUREZAS = [['COGS', 'COGS — operação do site'], ['G&A', 'G&A — back-office'], ['HOLDING', 'Holding — projetos'], ['TRANSPORTE', 'Transporte']]
 
 // normaliza cabeçalho (remove acentos, espaços, _ e pontuação como parênteses)
 const stripAccents = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -30,7 +31,7 @@ export default function CostCenterClient({ companies, countries, unidades }: { c
   useEffect(() => { load() }, [load])
 
   function edit(c: any) {
-    setForm({ ...empty, id: c.id, code: c.code, name: c.name, descr_en: c.descr_en ?? '', centro_logistico_id: c.centro_logistico_id ?? '', centro_logistico_nome: c.centro_logistico_nome ?? '', company_id: c.company_id ?? '', divisao_id: c.divisao_id ?? '', divisao_nome: c.divisao_nome ?? '', country_id: c.country_id ?? '', unidade_id: c.unidade_id ?? '' })
+    setForm({ ...empty, id: c.id, code: c.code, name: c.name, descr_en: c.descr_en ?? '', centro_logistico_id: c.centro_logistico_id ?? '', centro_logistico_nome: c.centro_logistico_nome ?? '', company_id: c.company_id ?? '', divisao_id: c.divisao_id ?? '', divisao_nome: c.divisao_nome ?? '', country_id: c.country_id ?? '', unidade_id: c.unidade_id ?? '', cost_nature: c.cost_nature ?? 'COGS' })
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
   const reset = () => { setForm({ ...empty }); setErr('') }
@@ -208,6 +209,11 @@ export default function CostCenterClient({ companies, countries, unidades }: { c
               <option value="">—</option>{unidades.map(u => <option key={u.id} value={u.id}>{u.code} — {u.name}</option>)}
             </select>
           </div>
+          <div><label className="label">Natureza do custo</label>
+            <select className="input" value={form.cost_nature} onChange={e => set('cost_nature', e.target.value)}>
+              {NATUREZAS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </select>
+          </div>
           <div><label className="label">Divisão (ID)</label><input className="input font-mono" value={form.divisao_id} onChange={e => set('divisao_id', e.target.value)} /></div>
           <div><label className="label">Divisão (Descrição)</label><input className="input" value={form.divisao_nome} onChange={e => set('divisao_nome', e.target.value)} /></div>
           <div><label className="label">País</label>
@@ -236,10 +242,10 @@ export default function CostCenterClient({ companies, countries, unidades }: { c
             <thead><tr className="text-xs text-slate-500 uppercase tracking-wide bg-slate-50 border-b border-slate-100">
               <th className="text-left px-3 py-2.5 font-medium">CC (ID)</th><th className="text-left px-3 py-2.5 font-medium">Descrição PT</th>
               <th className="text-left px-3 py-2.5 font-medium">Descrição EN</th><th className="text-left px-3 py-2.5 font-medium">Centro Logístico</th>
-              <th className="text-left px-3 py-2.5 font-medium">Empresa</th><th className="text-left px-3 py-2.5 font-medium">Unidade</th><th className="text-left px-3 py-2.5 font-medium">Divisão</th><th className="text-left px-3 py-2.5 font-medium">País</th><th className="px-3 py-2.5" />
+              <th className="text-left px-3 py-2.5 font-medium">Empresa</th><th className="text-left px-3 py-2.5 font-medium">Unidade</th><th className="text-left px-3 py-2.5 font-medium">Natureza</th><th className="text-left px-3 py-2.5 font-medium">Divisão</th><th className="text-left px-3 py-2.5 font-medium">País</th><th className="px-3 py-2.5" />
             </tr></thead>
             <tbody className="divide-y divide-slate-50">
-              {shown.length === 0 && <tr><td colSpan={9} className="px-4 py-8 text-center">{q.trim() ? <span className="text-slate-400">Nada encontrado</span> : <div className="text-slate-500 max-w-md mx-auto"><p className="font-semibold text-slate-700">Você ainda não tem centros de custo</p><p className="text-sm mt-1">O centro de custo (CC) é onde o budget e o realizado batem. Pertence a um país + unidade + empresa. Cadastre país, empresa e unidade antes.</p><p className="text-xs text-slate-400 mt-2">Cadastre o primeiro no formulário acima.</p></div>}</td></tr>}
+              {shown.length === 0 && <tr><td colSpan={10} className="px-4 py-8 text-center">{q.trim() ? <span className="text-slate-400">Nada encontrado</span> : <div className="text-slate-500 max-w-md mx-auto"><p className="font-semibold text-slate-700">Você ainda não tem centros de custo</p><p className="text-sm mt-1">O centro de custo (CC) é onde o budget e o realizado batem. Pertence a um país + unidade + empresa. Cadastre país, empresa e unidade antes.</p><p className="text-xs text-slate-400 mt-2">Cadastre o primeiro no formulário acima.</p></div>}</td></tr>}
               {shown.map(c => (
                 <tr key={c.id} className="hover:bg-slate-50">
                   <td className="px-3 py-2 font-mono text-xs text-slate-600">{c.code}</td>
@@ -248,6 +254,7 @@ export default function CostCenterClient({ companies, countries, unidades }: { c
                   <td className="px-3 py-2 text-slate-600 text-xs">{c.centro_logistico_id ? `${c.centro_logistico_id} — ${c.centro_logistico_nome || ''}` : '—'}</td>
                   <td className="px-3 py-2 text-slate-600 text-xs">{c.company_code ? `${c.company_code} — ${c.company_name}` : compName(c.company_id)}</td>
                   <td className="px-3 py-2 text-slate-600 text-xs">{c.unidade_code ? `${c.unidade_code} — ${c.unidade_nome}` : (c.unidade_nome || '—')}</td>
+                  <td className="px-3 py-2 text-xs"><span className={clsx('px-2 py-0.5 rounded-full font-medium', (c.cost_nature || 'COGS') === 'COGS' ? 'bg-sky-50 text-sky-700' : (c.cost_nature === 'G&A' ? 'bg-violet-50 text-violet-700' : c.cost_nature === 'TRANSPORTE' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'))}>{c.cost_nature || 'COGS'}</span></td>
                   <td className="px-3 py-2 text-slate-600 text-xs">{c.divisao_id ? `${c.divisao_id} — ${c.divisao_nome || ''}` : '—'}</td>
                   <td className="px-3 py-2 text-slate-600 text-xs">{c.country_name || '—'}</td>
                   <td className="px-3 py-2 text-right whitespace-nowrap">

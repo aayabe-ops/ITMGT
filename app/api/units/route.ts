@@ -3,14 +3,14 @@ import { getCurrentUser } from '@/lib/auth'
 import pool from '@/lib/db'
 
 const noauth = () => NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-const allowed = ['code', 'name', 'type', 'company_id', 'country_id', 'is_active',
+const allowed = ['code', 'name', 'type', 'company_id', 'country_id', 'is_active', 'cost_nature',
   'descr_en', 'centro_logistico_id', 'centro_logistico_nome', 'divisao_id', 'divisao_nome', 'unidade_id']
 
 // GET: Centro de Custo com Empresa, Unidade (agrupadora), Centro Logístico e Divisão.
 export async function GET() {
   const u = getCurrentUser(); if (!u) return noauth()
   const { rows } = await pool.query(
-    `SELECT un.id, un.code, un.name, un.is_active, un.company_id, un.country_id, un.unidade_id,
+    `SELECT un.id, un.code, un.name, un.is_active, un.company_id, un.country_id, un.unidade_id, un.cost_nature,
             un.descr_en, un.centro_logistico_id, un.centro_logistico_nome, un.divisao_id, un.divisao_nome,
             co.code AS company_code, co.name AS company_name, co.name AS parent_name,
             ct.name AS country_name, ct.code AS country_code,
