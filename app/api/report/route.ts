@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
   if (category_id) add('b.category_id', 'al.category_id', category_id)
   if (supplier_id) add('b.supplier_id', null, supplier_id)
   const cost_class = sp.get('cost_class') || null
-  if (cost_class) { params.push(cost_class); const i = params.length; extraB.push(`AND COALESCE(b.cost_class, svc.cost_class)::text = $${i}`); extraA.push(`AND al.cost_class::text = $${i}`) }
+  if (cost_class) { params.push(cost_class); const i = params.length; extraB.push(`AND COALESCE(b.cost_class, svc.cost_class::text) = $${i}`); extraA.push(`AND al.cost_class::text = $${i}`) }
   if (month)       add('b.month', 'al.month', month)
   else if (ytd)  { params.push(through); const i = params.length; extraB.push(`AND b.month <= $${i}`); extraA.push(`AND al.month <= $${i}`) }
 
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
   const sql = `
     WITH base AS (
       SELECT b.month, b.category_id, b.supplier_id, b.unit_id, u.country_id, u.company_id,
-             COALESCE(b.cost_class, svc.cost_class)::text AS cost_class, cur.code AS currency_code, sol.name AS solution_type,
+             COALESCE(b.cost_class, svc.cost_class::text) AS cost_class, cur.code AS currency_code, sol.name AS solution_type,
              (${vB})::float AS val
       FROM public.budget_lines b
       JOIN public.units u ON u.id = b.unit_id
@@ -74,7 +74,7 @@ export async function GET(req: NextRequest) {
     ),
     base_prev AS (
       SELECT b.category_id, b.supplier_id, u.country_id,
-             COALESCE(b.cost_class, svc.cost_class)::text AS cost_class, (${vB})::float AS val
+             COALESCE(b.cost_class, svc.cost_class::text) AS cost_class, (${vB})::float AS val
       FROM public.budget_lines b
       JOIN public.units u ON u.id = b.unit_id
       LEFT JOIN public.contracts svc ON svc.id = b.service_id
