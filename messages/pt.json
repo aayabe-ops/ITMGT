@@ -42,6 +42,9 @@
     "costCenters": "Centros de Custo",
     "gaGroups": "G&A Group",
     "users": "Usuários",
+    "inventario": "Inventário TI",
+    "invAssets": "Ativos (Hardware)",
+    "invLicenses": "Licenças (Software)",
     "logout": "Sair"
   },
   "common": {

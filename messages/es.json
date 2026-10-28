@@ -42,6 +42,9 @@
     "costCenters": "Centros de Costo",
     "gaGroups": "G&A Group",
     "users": "Usuarios",
+    "inventario": "Inventario TI",
+    "invAssets": "Activos (Hardware)",
+    "invLicenses": "Licencias (Software)",
     "logout": "Salir"
   },
   "common": {

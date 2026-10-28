@@ -23,6 +23,11 @@ export const canManageSupply = (u?: { role?: string } | null): boolean =>
 export const canManageBudget = (u?: { role?: string } | null): boolean =>
   !!u && (u.role === 'admin' || u.role === 'gerente')
 
+// INVENTÁRIO TI (cadastrar/editar/excluir ativos e licenças): mesmos papéis do
+// fornecimento (admin/analista/gerente), limitados pelo escopo geográfico (lib/scope).
+export const canManageInventory = (u?: { role?: string } | null): boolean =>
+  canManageSupply(u)
+
 // Diretor = leitura GLOBAL (todos os países), sem escrever nada.
 // Vê dashboard e TODOS os relatórios executivos (Forecast, Disponível, etc.).
 export const canSeeReports = (u?: { role?: string } | null): boolean =>

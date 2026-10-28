@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { AuthUser } from '@/lib/auth'
 import { Unit } from '@/lib/types'
-import { LayoutDashboard, Upload, FileText, Settings2, Users, LogOut, Menu, Building2, BarChart2, Truck, Tags, Boxes, FolderKanban, Layers, Globe, ClipboardCheck, Cpu, Share2, Building, CircleDollarSign, ArrowLeftRight, Wallet, ChevronDown, FileSignature, Warehouse, Receipt, Gauge, LineChart } from 'lucide-react'
+import { LayoutDashboard, Upload, FileText, Settings2, Users, LogOut, Menu, Building2, BarChart2, Truck, Tags, Boxes, FolderKanban, Layers, Globe, ClipboardCheck, Cpu, Share2, Building, CircleDollarSign, ArrowLeftRight, Wallet, ChevronDown, FileSignature, Warehouse, Receipt, Gauge, LineChart, HardDrive, KeyRound } from 'lucide-react'
 import clsx from 'clsx'
 import { useTranslations } from 'next-intl'
 import LangSwitcher from '@/components/LangSwitcher'
@@ -41,6 +41,11 @@ export default function Layout({ user, unit, children }: Props) {
       { href: '/report/analise',         key: 'report',          icon: LineChart },
       { href: '/report/despesa-unidade', key: 'reportUnit',      icon: Warehouse },
       { href: '/report/contratos',       key: 'reportContracts', icon: FileSignature },
+    ] },
+    // ── INVENTÁRIO DE TI ──
+    { key: 'inventario', items: [
+      { href: '/inventory/ativos',   key: 'invAssets',   icon: HardDrive },
+      { href: '/inventory/licencas', key: 'invLicenses', icon: KeyRound },
     ] },
     // ── CONFIGURAÇÕES (isolada no rodapé) — 4 grupos por tarefa + Saúde do cadastro (home).
     // Ordem dentro de cada grupo = ordem de preenchimento (dependências).
@@ -107,12 +112,17 @@ export default function Layout({ user, unit, children }: Props) {
     { href: '/report',         key: 'reportHub', icon: BarChart2 },
     { href: '/report/analise', key: 'report',    icon: LineChart },
   ]
+  const inventarioItems: NavLink[] = [
+    { href: '/inventory/ativos',   key: 'invAssets',   icon: HardDrive },
+    { href: '/inventory/licencas', key: 'invLicenses', icon: KeyRound },
+  ]
   const analistaGroups: NavGroup[] = [
     { key: 'operacao', items: [
       { href: '/',       key: 'dashboard', icon: LayoutDashboard },
       { href: '/actual', key: 'actual',    icon: FileText },
     ] },
     { key: 'fornecimento', items: fornecimentoItems },
+    { key: 'inventario', items: inventarioItems },
     { key: 'relatorios', items: relatoriosBasic },
   ]
   // Gerente: Analista + budget + fechamento.
@@ -124,6 +134,7 @@ export default function Layout({ user, unit, children }: Props) {
       { href: '/closing',       key: 'closing',   icon: ClipboardCheck },
     ] },
     { key: 'fornecimento', items: fornecimentoItems },
+    { key: 'inventario', items: inventarioItems },
     { key: 'relatorios', items: relatoriosBasic },
   ]
   // Menu adapta ao papel — mostra só o que o perfil pode abrir (esconder, não expulsar).
