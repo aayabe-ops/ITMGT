@@ -45,6 +45,7 @@
     "inventario": "IT Inventory",
     "invAssets": "Assets (Hardware)",
     "invLicenses": "Licenses (Software)",
+    "invReport": "Report by Unit",
     "logout": "Log out"
   },
   "common": {

@@ -3,12 +3,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { Plus, Pencil, Trash2, Search, X, HardDrive } from 'lucide-react'
 
 interface Group { id: string; code: string; name: string }
-interface Unit { id: string; code: string; name: string }
+interface Unidade { id: string; code: string; name: string }
 interface Asset {
-  id: string; asset_group_id: string; unit_id: string; name: string | null; subtype: string | null
+  id: string; asset_group_id: string; unidade_id: string; name: string | null; subtype: string | null
   manufacturer: string | null; model: string | null; serial_number: string | null; asset_tag: string | null
   os: string | null; status: string; notes: string | null
-  group_name: string; unit_code: string; unit_name: string; country_name: string | null; platform_name: string | null
+  group_name: string; unidade_code: string; unidade_name: string; country_name: string | null; platform_name: string | null
 }
 
 const STATUS: { v: string; label: string; cls: string }[] = [
@@ -20,15 +20,15 @@ const STATUS: { v: string; label: string; cls: string }[] = [
 const statusMeta = (v: string) => STATUS.find(s => s.v === v) || STATUS[0]
 
 const empty = {
-  id: '', asset_group_id: '', unit_id: '', name: '', subtype: '', manufacturer: '', model: '',
+  id: '', asset_group_id: '', unidade_id: '', name: '', subtype: '', manufacturer: '', model: '',
   serial_number: '', asset_tag: '', os: '', status: 'EM_USO', notes: '',
 }
 
-export default function AssetsClient({ groups, units }: { groups: Group[]; units: Unit[] }) {
+export default function AssetsClient({ groups, unidades }: { groups: Group[]; unidades: Unidade[] }) {
   const [rows, setRows] = useState<Asset[]>([])
   const [loading, setLoading] = useState(true)
   const [fGroup, setFGroup] = useState('')
-  const [fUnit, setFUnit] = useState('')
+  const [fUnidade, setFUnidade] = useState('')
   const [q, setQ] = useState('')
   const [form, setForm] = useState<typeof empty>(empty)
   const [editing, setEditing] = useState(false)
@@ -39,24 +39,24 @@ export default function AssetsClient({ groups, units }: { groups: Group[]; units
     setLoading(true)
     const p = new URLSearchParams()
     if (fGroup) p.set('group_id', fGroup)
-    if (fUnit) p.set('unit_id', fUnit)
+    if (fUnidade) p.set('unidade_id', fUnidade)
     const res = await fetch('/api/inventory/assets?' + p.toString())
     setRows(res.ok ? await res.json() : [])
     setLoading(false)
   }
-  useEffect(() => { load() }, [fGroup, fUnit])
+  useEffect(() => { load() }, [fGroup, fUnidade])
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase()
     if (!s) return rows
-    return rows.filter(r => [r.asset_tag, r.serial_number, r.model, r.name, r.manufacturer, r.group_name, r.unit_name]
+    return rows.filter(r => [r.asset_tag, r.serial_number, r.model, r.name, r.manufacturer, r.group_name, r.unidade_name]
       .some(v => (v || '').toLowerCase().includes(s)))
   }, [rows, q])
 
-  function openNew() { setForm({ ...empty, asset_group_id: groups[0]?.id || '', unit_id: units[0]?.id || '' }); setEditing(true); setError('') }
+  function openNew() { setForm({ ...empty, asset_group_id: groups[0]?.id || '', unidade_id: unidades[0]?.id || '' }); setEditing(true); setError('') }
   function openEdit(a: Asset) {
     setForm({
-      id: a.id, asset_group_id: a.asset_group_id, unit_id: a.unit_id, name: a.name || '', subtype: a.subtype || '',
+      id: a.id, asset_group_id: a.asset_group_id, unidade_id: a.unidade_id, name: a.name || '', subtype: a.subtype || '',
       manufacturer: a.manufacturer || '', model: a.model || '', serial_number: a.serial_number || '',
       asset_tag: a.asset_tag || '', os: a.os || '', status: a.status, notes: a.notes || '',
     })
@@ -67,7 +67,7 @@ export default function AssetsClient({ groups, units }: { groups: Group[]; units
 
   async function save(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.asset_group_id || !form.unit_id) { setError('Grupo e unidade são obrigatórios.'); return }
+    if (!form.asset_group_id || !form.unidade_id) { setError('Grupo e unidade são obrigatórios.'); return }
     setSaving(true); setError('')
     const method = form.id ? 'PATCH' : 'POST'
     const res = await fetch('/api/inventory/assets', {
@@ -111,9 +111,9 @@ export default function AssetsClient({ groups, units }: { groups: Group[]; units
         </div>
         <div>
           <label className="label">Unidade</label>
-          <select className="input min-w-[180px]" value={fUnit} onChange={e => setFUnit(e.target.value)}>
+          <select className="input min-w-[180px]" value={fUnidade} onChange={e => setFUnidade(e.target.value)}>
             <option value="">Todas</option>
-            {units.map(u => <option key={u.id} value={u.id}>{u.code} — {u.name}</option>)}
+            {unidades.map(u => <option key={u.id} value={u.id}>{u.code} — {u.name}</option>)}
           </select>
         </div>
         <div className="flex-1 min-w-[200px]">
@@ -141,9 +141,9 @@ export default function AssetsClient({ groups, units }: { groups: Group[]; units
             </div>
             <div>
               <label className="label">Unidade *</label>
-              <select className="input" value={form.unit_id} onChange={e => set('unit_id', e.target.value)} required>
+              <select className="input" value={form.unidade_id} onChange={e => set('unidade_id', e.target.value)} required>
                 <option value="">Selecione…</option>
-                {units.map(u => <option key={u.id} value={u.id}>{u.code} — {u.name}</option>)}
+                {unidades.map(u => <option key={u.id} value={u.id}>{u.code} — {u.name}</option>)}
               </select>
             </div>
             <div>
@@ -220,7 +220,7 @@ export default function AssetsClient({ groups, units }: { groups: Group[]; units
                   <td className="px-4 py-3 text-slate-600">{a.group_name}</td>
                   <td className="px-4 py-3 text-slate-700">{[a.manufacturer, a.model].filter(Boolean).join(' ') || a.name || '—'}</td>
                   <td className="px-4 py-3 text-slate-500">{a.serial_number || '—'}</td>
-                  <td className="px-4 py-3 text-slate-600">{a.unit_code}</td>
+                  <td className="px-4 py-3 text-slate-600">{a.unidade_code}</td>
                   <td className="px-4 py-3"><span className={'inline-block rounded-full border px-2 py-0.5 text-xs ' + st.cls}>{st.label}</span></td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">

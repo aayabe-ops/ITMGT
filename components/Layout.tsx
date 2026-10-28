@@ -44,8 +44,9 @@ export default function Layout({ user, unit, children }: Props) {
     ] },
     // ── INVENTÁRIO DE TI ──
     { key: 'inventario', items: [
-      { href: '/inventory/ativos',   key: 'invAssets',   icon: HardDrive },
-      { href: '/inventory/licencas', key: 'invLicenses', icon: KeyRound },
+      { href: '/inventory/ativos',    key: 'invAssets',   icon: HardDrive },
+      { href: '/inventory/licencas',  key: 'invLicenses', icon: KeyRound },
+      { href: '/inventory/relatorio', key: 'invReport',   icon: BarChart2 },
     ] },
     // ── CONFIGURAÇÕES (isolada no rodapé) — 4 grupos por tarefa + Saúde do cadastro (home).
     // Ordem dentro de cada grupo = ordem de preenchimento (dependências).
@@ -87,6 +88,9 @@ export default function Layout({ user, unit, children }: Props) {
       { href: '/report/despesa-unidade', key: 'reportUnit',      icon: Warehouse },
       { href: '/report/contratos',       key: 'reportContracts', icon: FileSignature },
     ] },
+    { key: 'inventario', items: [
+      { href: '/inventory/relatorio', key: 'invReport', icon: BarChart2 },
+    ] },
   ]
   // Lançador: só o que opera (dashboard + Ordem de pagamento).
   const lancadorGroups: NavGroup[] = [
@@ -113,8 +117,9 @@ export default function Layout({ user, unit, children }: Props) {
     { href: '/report/analise', key: 'report',    icon: LineChart },
   ]
   const inventarioItems: NavLink[] = [
-    { href: '/inventory/ativos',   key: 'invAssets',   icon: HardDrive },
-    { href: '/inventory/licencas', key: 'invLicenses', icon: KeyRound },
+    { href: '/inventory/ativos',    key: 'invAssets',   icon: HardDrive },
+    { href: '/inventory/licencas',  key: 'invLicenses', icon: KeyRound },
+    { href: '/inventory/relatorio', key: 'invReport',   icon: BarChart2 },
   ]
   const analistaGroups: NavGroup[] = [
     { key: 'operacao', items: [

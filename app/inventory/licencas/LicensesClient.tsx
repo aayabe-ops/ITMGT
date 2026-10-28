@@ -3,12 +3,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { Plus, Pencil, Trash2, Search, X, KeyRound, AlertTriangle } from 'lucide-react'
 
 interface Group { id: string; code: string; name: string }
-interface Unit { id: string; code: string; name: string }
+interface Unidade { id: string; code: string; name: string }
 interface License {
-  id: string; asset_group_id: string; unit_id: string | null; product: string; vendor: string | null
+  id: string; asset_group_id: string; unidade_id: string | null; product: string; vendor: string | null
   license_type: string | null; metric: string | null; seats: number | null; seats_used: number | null
   start_date: string | null; expiry_date: string | null; notes: string | null
-  group_name: string; unit_code: string | null; unit_name: string | null
+  group_name: string; unidade_code: string | null; unidade_name: string | null
 }
 
 const TYPES = [{ v: 'PERPETUA', label: 'Perpétua' }, { v: 'SUBSCRIPTION', label: 'Subscrição' }, { v: 'SAAS', label: 'SaaS' }]
@@ -16,7 +16,7 @@ const METRICS = [{ v: 'USUARIO', label: 'Por usuário' }, { v: 'DISPOSITIVO', la
 const typeLabel = (v: string | null) => TYPES.find(t => t.v === v)?.label || '—'
 
 const empty = {
-  id: '', asset_group_id: '', unit_id: '', product: '', vendor: '', license_type: 'SUBSCRIPTION',
+  id: '', asset_group_id: '', unidade_id: '', product: '', vendor: '', license_type: 'SUBSCRIPTION',
   metric: 'USUARIO', seats: '', seats_used: '', start_date: '', expiry_date: '', notes: '',
 }
 
@@ -29,11 +29,11 @@ function expiryFlag(d: string | null): 'ok' | 'soon' | 'late' | null {
   return 'ok'
 }
 
-export default function LicensesClient({ groups, units, isGlobal }: { groups: Group[]; units: Unit[]; isGlobal: boolean }) {
+export default function LicensesClient({ groups, unidades, isGlobal }: { groups: Group[]; unidades: Unidade[]; isGlobal: boolean }) {
   const [rows, setRows] = useState<License[]>([])
   const [loading, setLoading] = useState(true)
   const [fGroup, setFGroup] = useState('')
-  const [fUnit, setFUnit] = useState('')
+  const [fUnidade, setFUnidade] = useState('')
   const [q, setQ] = useState('')
   const [form, setForm] = useState<typeof empty>(empty)
   const [editing, setEditing] = useState(false)
@@ -44,23 +44,23 @@ export default function LicensesClient({ groups, units, isGlobal }: { groups: Gr
     setLoading(true)
     const p = new URLSearchParams()
     if (fGroup) p.set('group_id', fGroup)
-    if (fUnit) p.set('unit_id', fUnit)
+    if (fUnidade) p.set('unidade_id', fUnidade)
     const res = await fetch('/api/inventory/licenses?' + p.toString())
     setRows(res.ok ? await res.json() : [])
     setLoading(false)
   }
-  useEffect(() => { load() }, [fGroup, fUnit])
+  useEffect(() => { load() }, [fGroup, fUnidade])
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase()
     if (!s) return rows
-    return rows.filter(r => [r.product, r.vendor, r.group_name, r.unit_name].some(v => (v || '').toLowerCase().includes(s)))
+    return rows.filter(r => [r.product, r.vendor, r.group_name, r.unidade_name].some(v => (v || '').toLowerCase().includes(s)))
   }, [rows, q])
 
-  function openNew() { setForm({ ...empty, asset_group_id: groups[0]?.id || '', unit_id: isGlobal ? '' : (units[0]?.id || '') }); setEditing(true); setError('') }
+  function openNew() { setForm({ ...empty, asset_group_id: groups[0]?.id || '', unidade_id: isGlobal ? '' : (unidades[0]?.id || '') }); setEditing(true); setError('') }
   function openEdit(l: License) {
     setForm({
-      id: l.id, asset_group_id: l.asset_group_id, unit_id: l.unit_id || '', product: l.product, vendor: l.vendor || '',
+      id: l.id, asset_group_id: l.asset_group_id, unidade_id: l.unidade_id || '', product: l.product, vendor: l.vendor || '',
       license_type: l.license_type || 'SUBSCRIPTION', metric: l.metric || 'USUARIO',
       seats: l.seats != null ? String(l.seats) : '', seats_used: l.seats_used != null ? String(l.seats_used) : '',
       start_date: l.start_date ? l.start_date.slice(0, 10) : '', expiry_date: l.expiry_date ? l.expiry_date.slice(0, 10) : '', notes: l.notes || '',
@@ -76,7 +76,7 @@ export default function LicensesClient({ groups, units, isGlobal }: { groups: Gr
     setSaving(true); setError('')
     const payload: any = {
       ...form,
-      unit_id: form.unit_id || null,
+      unidade_id: form.unidade_id || null,
       seats: form.seats === '' ? null : Number(form.seats),
       seats_used: form.seats_used === '' ? null : Number(form.seats_used),
     }
@@ -121,9 +121,9 @@ export default function LicensesClient({ groups, units, isGlobal }: { groups: Gr
         </div>
         <div>
           <label className="label">Unidade</label>
-          <select className="input min-w-[180px]" value={fUnit} onChange={e => setFUnit(e.target.value)}>
+          <select className="input min-w-[180px]" value={fUnidade} onChange={e => setFUnidade(e.target.value)}>
             <option value="">Todas</option>
-            {units.map(u => <option key={u.id} value={u.id}>{u.code} — {u.name}</option>)}
+            {unidades.map(u => <option key={u.id} value={u.id}>{u.code} — {u.name}</option>)}
           </select>
         </div>
         <div className="flex-1 min-w-[200px]">
@@ -178,10 +178,10 @@ export default function LicensesClient({ groups, units, isGlobal }: { groups: Gr
             </div>
             <div>
               <label className="label">Unidade {isGlobal && <span className="text-slate-400">(vazio = corporativa)</span>}</label>
-              <select className="input" value={form.unit_id} onChange={e => set('unit_id', e.target.value)}>
+              <select className="input" value={form.unidade_id} onChange={e => set('unidade_id', e.target.value)}>
                 {isGlobal && <option value="">Corporativa (global)</option>}
                 {!isGlobal && <option value="">Selecione…</option>}
-                {units.map(u => <option key={u.id} value={u.id}>{u.code} — {u.name}</option>)}
+                {unidades.map(u => <option key={u.id} value={u.id}>{u.code} — {u.name}</option>)}
               </select>
             </div>
             <div>
@@ -240,7 +240,7 @@ export default function LicensesClient({ groups, units, isGlobal }: { groups: Gr
                       </span>
                     ) : '—'}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{l.unit_code || <span className="text-slate-400">Corporativa</span>}</td>
+                  <td className="px-4 py-3 text-slate-600">{l.unidade_code || <span className="text-slate-400">Corporativa</span>}</td>
                   <td className="px-4 py-3">
                     {l.expiry_date ? (
                       <span className={

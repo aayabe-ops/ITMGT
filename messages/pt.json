@@ -45,6 +45,7 @@
     "inventario": "Inventário TI",
     "invAssets": "Ativos (Hardware)",
     "invLicenses": "Licenças (Software)",
+    "invReport": "Relatório por Unidade",
     "logout": "Sair"
   },
   "common": {
