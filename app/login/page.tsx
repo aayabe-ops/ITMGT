@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ShieldCheck, ArrowRight, Lock } from 'lucide-react'
+import { ShieldCheck, ArrowRight, Lock, Mail, Snowflake, LifeBuoy } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -24,52 +24,38 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen grid md:grid-cols-2">
-      {/* Painel esquerdo — foto do armazém */}
-      <div className="relative flex flex-col justify-between overflow-hidden bg-navy-900 px-8 py-8 text-white md:px-12 md:py-12 min-h-[220px] md:min-h-screen">
-        <img src="/bg-edge.jpg" alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover object-center" />
-        <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-navy-900/90 via-navy-900/45 to-navy-900/85" />
+    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-8">
+      {/* Card flutuante dividido */}
+      <div className="grid w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-[0_18px_50px_-12px_rgba(20,30,60,0.28)] md:grid-cols-2">
 
-        <div className="relative">
-          <img src="/logo-white.webp" alt="Emergent Cold LatAm" className="h-10 w-auto md:h-12" />
-        </div>
-
-        <div className="relative hidden max-w-md md:block">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">Acesso seguro às operações</p>
-          <h1 className="mt-4 text-3xl font-semibold leading-tight md:text-[2.1rem]">
-            Gestão de custos de TI, governada por papel e escopo.
-          </h1>
-          <div className="mt-8 space-y-3">
-            <Feature label="OPEX/CAPEX" text="Budget, Realizado e Forecast" />
-            <Feature label="Escopo" text="País, unidade, fornecedor e contrato" />
-            <Feature label="Rateio" text="Distribuição por driver e memória de cálculo" />
-          </div>
-        </div>
-
-        <p className="relative hidden text-xs text-white/50 md:block">emergentcoldlatam.com</p>
-      </div>
-
-      {/* Painel direito — login */}
-      <div className="flex items-center justify-center bg-slate-50 px-6 py-12">
-        <div className="w-full max-w-sm">
+        {/* Painel esquerdo — formulário */}
+        <div className="flex flex-col px-8 py-10 md:px-12 md:py-12">
           <div className="flex items-center gap-2.5">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-navy-50 text-navy-700">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-navy-700 text-white">
               <ShieldCheck className="h-[18px] w-[18px]" strokeWidth={2} />
             </span>
-            <h2 className="text-xl font-semibold text-navy-800">Entrar</h2>
+            <span className="text-sm font-semibold text-navy-800">IT Cost Manager</span>
           </div>
-          <p className="mt-2 mb-6 text-sm leading-relaxed text-slate-500">
+
+          <h1 className="mt-8 text-2xl font-semibold text-navy-800">Bem-vindo de volta</h1>
+          <p className="mt-2 mb-7 text-sm leading-relaxed text-slate-500">
             Acesse o painel com suas credenciais corporativas.
           </p>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="label">E-mail</label>
-              <input type="email" className="input" value={email} onChange={e => setEmail(e.target.value)} required autoFocus placeholder="voce@emergentcold.com" />
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input type="email" className="input pl-10" value={email} onChange={e => setEmail(e.target.value)} required autoFocus placeholder="voce@emergentcold.com" />
+              </div>
             </div>
             <div>
               <label className="label">Senha</label>
-              <input type="password" className="input" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••••" />
+              <div className="relative">
+                <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input type="password" className="input pl-10" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••••" />
+              </div>
             </div>
             {error && (
               <p className="rounded-lg border border-bordeaux-100 bg-bordeaux-50 px-3 py-2 text-xs text-bordeaux-700">{error}</p>
@@ -79,16 +65,52 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="mt-7 flex items-center justify-center gap-1.5 text-center text-xs text-slate-400">
+          <div className="mt-7 flex items-start gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <LifeBuoy className="mt-0.5 h-4 w-4 shrink-0 text-navy-600" />
+            <div>
+              <p className="text-xs font-semibold text-navy-800">Esqueceu a senha ou não tem acesso?</p>
+              <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">
+                O acesso é liberado pelo administrador. Fale com o Suporte de TI para criar ou redefinir sua senha.
+              </p>
+            </div>
+          </div>
+
+          <p className="mt-auto flex items-center justify-center gap-1.5 pt-8 text-center text-xs text-slate-400">
             <Lock className="h-3 w-3" /> Sessão protegida · © {new Date().getFullYear()} Emergent Cold LatAm
           </p>
         </div>
+
+        {/* Painel direito — arte da marca (foto do armazém) */}
+        <div className="relative hidden flex-col justify-between overflow-hidden bg-navy-900 px-10 py-12 text-white md:flex">
+          <img src="/bg-edge.jpg" alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover object-center" />
+          <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-navy-900/92 via-navy-900/55 to-navy-900/90" />
+
+          <div className="relative flex items-center gap-2.5">
+            <Snowflake className="h-5 w-5 text-white/80" />
+            <img src="/logo-white.webp" alt="Emergent Cold LatAm" className="h-9 w-auto" />
+          </div>
+
+          <div className="relative max-w-sm">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">Acesso seguro às operações</p>
+            <h2 className="mt-4 text-[1.7rem] font-semibold leading-tight">
+              Gestão de custos de TI, governada por papel e escopo.
+            </h2>
+            <div className="mt-8 space-y-3">
+              <Feature label="OPEX/CAPEX" text="Budget, Realizado e Forecast" />
+              <Feature label="Escopo" text="País, unidade, fornecedor e contrato" />
+              <Feature label="Rateio" text="Distribuição por driver e memória de cálculo" />
+            </div>
+          </div>
+
+          <p className="relative text-xs text-white/50">emergentcoldlatam.com</p>
+        </div>
+
       </div>
     </div>
   )
 }
 
-/* Barra de feature do painel esquerdo */
+/* Barra de feature do painel de arte */
 function Feature({ label, text }: { label: string; text: string }) {
   return (
     <div className="flex items-center gap-4 rounded-xl bg-white/10 px-4 py-3 ring-1 ring-white/15 backdrop-blur-sm">
