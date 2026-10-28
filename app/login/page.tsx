@@ -82,7 +82,7 @@ export default function LoginPage() {
 
         {/* Painel direito — arte da marca (foto do armazém) */}
         <div className="relative hidden flex-col justify-between overflow-hidden bg-navy-900 px-10 py-12 text-white md:flex">
-          <img src="/bg-edge.jpg" alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover object-center" />
+          <img src="/login-bg.jpg" alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover object-center" />
           <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-navy-900/92 via-navy-900/55 to-navy-900/90" />
 
           <div className="relative flex items-center gap-2.5">
