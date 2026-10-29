@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, Fragment } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { AuthUser } from '@/lib/auth'
 import { Unit } from '@/lib/types'
 import { LayoutDashboard, Upload, FileText, Settings2, Users, LogOut, Menu, Building2, BarChart2, Truck, Tags, Boxes, FolderKanban, Layers, Globe, ClipboardCheck, Cpu, Share2, Building, CircleDollarSign, ArrowLeftRight, Wallet, ChevronDown, FileSignature, Warehouse, Receipt, Gauge, LineChart, HardDrive, KeyRound } from 'lucide-react'
@@ -20,7 +20,6 @@ interface Props {
 
 export default function Layout({ user, unit, children }: Props) {
   const pathname = usePathname()
-  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [hover, setHover] = useState(false)   // desktop: expande o rail no hover
   const wide = hover || open                  // largo quando: hover (desktop) ou aberto (mobile)
@@ -162,7 +161,9 @@ export default function Layout({ user, unit, children }: Props) {
 
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST' })
-    router.push('/login')
+    // Recarga total para limpar o Router Cache: o próximo usuário não herda
+    // o menu/RSC renderizado para este (evita cadastro aparecer p/ diretor).
+    window.location.href = '/login'
   }
 
   const Sidebar = () => (

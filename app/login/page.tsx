@@ -1,10 +1,8 @@
 'use client'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { ShieldCheck, ArrowRight, Lock, Mail, Snowflake, LifeBuoy } from 'lucide-react'
 
 export default function LoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -20,7 +18,9 @@ export default function LoginPage() {
     })
     const data = await res.json()
     if (!res.ok) { setError(data.error || 'Erro ao entrar'); setLoading(false) }
-    else router.push('/')
+    // Recarga total (não router.push) para limpar o Router Cache do Next e não
+    // herdar o menu/estado renderizado para outro usuário na mesma aba.
+    else window.location.href = '/'
   }
 
   return (
