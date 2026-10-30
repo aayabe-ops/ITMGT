@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { yearOptions, DEFAULT_YEAR } from '@/lib/years'
 import { RefreshCw, Check } from 'lucide-react'
 import GuideCard from '@/components/GuideCard'
@@ -9,6 +10,8 @@ interface Opt { id: string; code?: string; name: string }
 interface Row { country_id: string; country_name: string; currency_id: string | null; currency_code: string | null; usd_rate: string | null }
 
 export default function ExchangeClient({ currencies }: { currencies: Opt[] }) {
+  const t = useTranslations('cad')
+  const tc = useTranslations('common')
   const [year, setYear] = useState(DEFAULT_YEAR)
   const [rows, setRows] = useState<Row[]>([])
   const [draft, setDraft] = useState<Record<string, { currency_id: string; usd_rate: string }>>({})
@@ -43,8 +46,8 @@ export default function ExchangeClient({ currencies }: { currencies: Opt[] }) {
     <div className="page">
       <div className="mb-5 flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="page-title">Câmbio por País</h1>
-          <p className="text-sm text-slate-500">Moeda local e taxa do dólar (quanto da moeda local vale 1 USD) — ano {year}</p>
+          <h1 className="page-title">{t('exTitle')}</h1>
+          <p className="text-sm text-slate-500">{t('exSub', { year: String(year) })}</p>
         </div>
         <div className="flex items-center gap-2">
           <select className="input w-24 text-sm" value={year} onChange={e => setYear(+e.target.value)}>
@@ -55,25 +58,21 @@ export default function ExchangeClient({ currencies }: { currencies: Opt[] }) {
       </div>
 
       <GuideCard storageKey="/cadastros/cambio"
-        steps={[
-          'Selecione o ano no seletor acima.',
-          'Para cada país, informe a moeda local e a taxa do dólar (quanto da moeda local vale 1 USD).',
-          'As taxas consolidam os valores em USD nos relatórios.',
-        ]}
-        note="Cadastre antes os Países e as Moedas." />
+        steps={[t('exStep1'), t('exStep2'), t('exStep3')]}
+        note={t('exNote')} />
 
       <div className="card overflow-hidden">
         <table className="tbl w-full text-sm">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-100 text-xs font-medium text-slate-500">
-              <th className="text-left px-4 py-2">País</th>
-              <th className="text-left px-4 py-2">Moeda local</th>
-              <th className="text-right px-4 py-2">Taxa USD (local por 1 USD)</th>
+              <th className="text-left px-4 py-2">{t('exColCountry')}</th>
+              <th className="text-left px-4 py-2">{t('exColCurrency')}</th>
+              <th className="text-right px-4 py-2">{t('exColRate')}</th>
               <th className="px-4 py-2 w-20" />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {rows.length === 0 && <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-400">{loading ? 'Carregando…' : 'Cadastre países primeiro'}</td></tr>}
+            {rows.length === 0 && <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-400">{loading ? tc('loading') : t('exEmpty')}</td></tr>}
             {rows.map(r => {
               const d = draft[r.country_id] || { currency_id: '', usd_rate: '' }
               return (
@@ -100,7 +99,7 @@ export default function ExchangeClient({ currencies }: { currencies: Opt[] }) {
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-slate-400 mt-3">Ex.: Brasil → BRL, taxa 5,88 (R$ 5,88 por US$ 1). Usado para visões em moeda local e em USD.</p>
+      <p className="text-xs text-slate-400 mt-3">{t('exFootnote')}</p>
     </div>
   )
 }

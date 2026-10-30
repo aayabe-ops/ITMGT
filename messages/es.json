@@ -481,7 +481,18 @@
     "impCreated": "{n} creado(s)",
     "impErr": ", {n} con error",
     "impDup": ", {n} ya existentes omitidas",
-    "impInvalid": ", {n} inválida(s)"
+    "impInvalid": ", {n} inválida(s)",
+    "selectDots": "Selecciona…",
+    "noOptions": "Ninguna opción",
+    "nSelected": "{n} seleccionados",
+    "selectAll": "Marcar todos",
+    "clearSel": "Limpiar selección",
+    "newH": "Nuevo",
+    "toDefine": "— definir —",
+    "deactivated": "Registro en uso — fue desactivado en vez de eliminado.",
+    "hierStep1": "Ingresa Código y Nombre de {title}.",
+    "hierStep2": "Selecciona el/la {parent} al que pertenece el registro.",
+    "hierNote": "Registra antes el/la {parent}, que es obligatorio aquí."
   },
   "cad": {
     "fGrupo": "Grupo",
@@ -516,6 +527,22 @@
     "gaGroupsTitle": "G&A Group",
     "gaGroupsSub": "Agrupación G&A",
     "allocationsTitle": "Asignación",
-    "allocationsSub": "Plataforma / Integration / Holding / Corporate"
+    "allocationsSub": "Plataforma / Integration / Holding / Corporate",
+    "countriesTitle": "Países",
+    "countriesSub": "Cada país pertenece a una plataforma (11 países)",
+    "countriesWhat": "países",
+    "countriesEx": "Cada país pertenece a una plataforma y tiene una moneda. Ej.: Brasil (BRL), Uruguay (UYU).",
+    "platformLabel": "Plataforma",
+    "exTitle": "Cambio por País",
+    "exSub": "Moneda local y tasa del dólar (cuánta moneda local vale 1 USD) — año {year}",
+    "exStep1": "Selecciona el año en el selector de arriba.",
+    "exStep2": "Para cada país, ingresa la moneda local y la tasa del dólar (cuánta moneda local vale 1 USD).",
+    "exStep3": "Las tasas consolidan los valores en USD en los reportes.",
+    "exNote": "Registra antes los Países y las Monedas.",
+    "exColCountry": "País",
+    "exColCurrency": "Moneda local",
+    "exColRate": "Tasa USD (local por 1 USD)",
+    "exEmpty": "Registra países primero",
+    "exFootnote": "Ej.: Brasil → BRL, tasa 5,88 (R$ 5,88 por US$ 1). Usado para vistas en moneda local y en USD."
   }
 }

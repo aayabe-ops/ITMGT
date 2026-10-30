@@ -481,7 +481,18 @@
     "impCreated": "{n} created",
     "impErr": ", {n} with error",
     "impDup": ", {n} already existing skipped",
-    "impInvalid": ", {n} invalid"
+    "impInvalid": ", {n} invalid",
+    "selectDots": "Select…",
+    "noOptions": "No options",
+    "nSelected": "{n} selected",
+    "selectAll": "Select all",
+    "clearSel": "Clear selection",
+    "newH": "New",
+    "toDefine": "— set —",
+    "deactivated": "Record in use — it was deactivated instead of deleted.",
+    "hierStep1": "Enter a Code and Name for {title}.",
+    "hierStep2": "Select the {parent} the record belongs to.",
+    "hierNote": "Register the {parent} first — it is required here."
   },
   "cad": {
     "fGrupo": "Group",
@@ -516,6 +527,22 @@
     "gaGroupsTitle": "G&A Group",
     "gaGroupsSub": "G&A grouping",
     "allocationsTitle": "Allocation",
-    "allocationsSub": "Platform / Integration / Holding / Corporate"
+    "allocationsSub": "Platform / Integration / Holding / Corporate",
+    "countriesTitle": "Countries",
+    "countriesSub": "Each country belongs to a platform (11 countries)",
+    "countriesWhat": "countries",
+    "countriesEx": "Each country belongs to a platform and has a currency. E.g. Brazil (BRL), Uruguay (UYU).",
+    "platformLabel": "Platform",
+    "exTitle": "Exchange rate by country",
+    "exSub": "Local currency and USD rate (how much local currency equals 1 USD) — year {year}",
+    "exStep1": "Select the year in the selector above.",
+    "exStep2": "For each country, enter the local currency and the USD rate (how much local currency equals 1 USD).",
+    "exStep3": "The rates consolidate values into USD in the reports.",
+    "exNote": "Register Countries and Currencies first.",
+    "exColCountry": "Country",
+    "exColCurrency": "Local currency",
+    "exColRate": "USD rate (local per 1 USD)",
+    "exEmpty": "Register countries first",
+    "exFootnote": "E.g. Brazil → BRL, rate 5.88 (R$ 5.88 per US$ 1). Used for local-currency and USD views."
   }
 }

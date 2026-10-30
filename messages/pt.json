@@ -481,7 +481,18 @@
     "impCreated": "{n} criado(s)",
     "impErr": ", {n} com erro",
     "impDup": ", {n} já existente(s) puladas",
-    "impInvalid": ", {n} inválida(s)"
+    "impInvalid": ", {n} inválida(s)",
+    "selectDots": "Selecione…",
+    "noOptions": "Nenhuma opção",
+    "nSelected": "{n} selecionados",
+    "selectAll": "Marcar todos",
+    "clearSel": "Limpar seleção",
+    "newH": "Novo",
+    "toDefine": "— definir —",
+    "deactivated": "Registro em uso — foi desativado em vez de excluído.",
+    "hierStep1": "Informe Código e Nome de {title}.",
+    "hierStep2": "Selecione o(a) {parent} ao qual o registro pertence.",
+    "hierNote": "Cadastre antes o(a) {parent}, que é obrigatório aqui."
   },
   "cad": {
     "fGrupo": "Grupo",
@@ -516,6 +527,22 @@
     "gaGroupsTitle": "G&A Group",
     "gaGroupsSub": "Agrupamento G&A",
     "allocationsTitle": "Alocação",
-    "allocationsSub": "Plataforma / Integration / Holding / Corporate"
+    "allocationsSub": "Plataforma / Integration / Holding / Corporate",
+    "countriesTitle": "Países",
+    "countriesSub": "Cada país pertence a uma plataforma (11 países)",
+    "countriesWhat": "países",
+    "countriesEx": "Cada país pertence a uma plataforma e tem uma moeda. Ex.: Brasil (BRL), Uruguai (UYU).",
+    "platformLabel": "Plataforma",
+    "exTitle": "Câmbio por País",
+    "exSub": "Moeda local e taxa do dólar (quanto da moeda local vale 1 USD) — ano {year}",
+    "exStep1": "Selecione o ano no seletor acima.",
+    "exStep2": "Para cada país, informe a moeda local e a taxa do dólar (quanto da moeda local vale 1 USD).",
+    "exStep3": "As taxas consolidam os valores em USD nos relatórios.",
+    "exNote": "Cadastre antes os Países e as Moedas.",
+    "exColCountry": "País",
+    "exColCurrency": "Moeda local",
+    "exColRate": "Taxa USD (local por 1 USD)",
+    "exEmpty": "Cadastre países primeiro",
+    "exFootnote": "Ex.: Brasil → BRL, taxa 5,88 (R$ 5,88 por US$ 1). Usado para visões em moeda local e em USD."
   }
 }

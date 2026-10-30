@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { Plus, Trash2, Pencil, X, Upload, Download, Search } from 'lucide-react'
 import clsx from 'clsx'
 import { csvDownload, normH, norm, readTable } from '@/lib/csv'
@@ -12,6 +13,8 @@ export default function HierCrud({ endpoint, title, subtitle, parentLabel, paren
   endpoint: string; title: string; subtitle?: string; parentLabel: string; parentField: string; parents: Opt[]
   teach?: { what: string; example?: string }
 }) {
+  const t = useTranslations('lookup')
+  const tc = useTranslations('common')
   const emptyForm: any = { id: '', code: '', name: '', [parentField]: '' }
   const [items, setItems] = useState<Item[]>([])
   const [form, setForm] = useState<any>({ ...emptyForm })
@@ -34,7 +37,6 @@ export default function HierCrud({ endpoint, title, subtitle, parentLabel, paren
     ])
   }
   const findParent = (v: string) => { const k = norm(v); return parents.find(p => norm(p.code || '') === k) || parents.find(p => norm(p.name) === k) }
-  // Monta o PREVIEW (não grava)
   async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]; if (!file) return
     setErr(''); setImpMsg('')
@@ -42,7 +44,7 @@ export default function HierCrud({ endpoint, title, subtitle, parentLabel, paren
     const iC = headers.findIndex(h => ['codigo', 'code', 'cod'].includes(h))
     const iN = headers.findIndex(h => ['nome', 'name'].includes(h))
     const iP = headers.findIndex(h => [parentKey, 'pai', 'parent'].includes(h))
-    if (iC < 0 || iN < 0) { setErr('CSV inválido: precisa de "codigo" e "nome".'); e.target.value = ''; return }
+    if (iC < 0 || iN < 0) { setErr(t('csvInvalid')); e.target.value = ''; return }
     const nc = (s: string) => String(s || '').trim().toLowerCase()
     const existing = new Set(items.map(i => nc(i.code)))
     const rows: Prev[] = data.map(r => {
@@ -67,7 +69,7 @@ export default function HierCrud({ endpoint, title, subtitle, parentLabel, paren
     const dup = preview.filter(p => p.status === 'dup').length
     const inv = preview.filter(p => p.status === 'invalid').length
     setImporting(false); setPreview(null); setPreviewName('')
-    setImpMsg(`Importação: ${ok} criado(s)${fail ? `, ${fail} com erro` : ''}${dup ? `, ${dup} já existente(s) puladas` : ''}${inv ? `, ${inv} inválida(s)` : ''}.`)
+    setImpMsg(`${t('impPrefix')} ${t('impCreated', { n: ok })}${fail ? t('impErr', { n: fail }) : ''}${dup ? t('impDup', { n: dup }) : ''}${inv ? t('impInvalid', { n: inv }) : ''}.`)
     load()
   }
 
@@ -83,13 +85,13 @@ export default function HierCrud({ endpoint, title, subtitle, parentLabel, paren
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.code.trim() || !form.name.trim()) { setErr('Código e nome são obrigatórios.'); return }
+    if (!form.code.trim() || !form.name.trim()) { setErr(t('reqCodeName')); return }
     setSaving(true); setErr('')
     const r = await fetch(endpoint, {
       method: editing ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form),
     })
     const d = await r.json().catch(() => ({}))
-    if (!r.ok) setErr(d.error || 'Erro ao salvar.')
+    if (!r.ok) setErr(d.error || tc('saveError'))
     else { reset(); load() }
     setSaving(false)
   }
@@ -102,10 +104,10 @@ export default function HierCrud({ endpoint, title, subtitle, parentLabel, paren
     load()
   }
   async function remove(it: Item) {
-    if (!confirm(`Excluir "${it.name}"?`)) return
+    if (!confirm(t('confirmDelete', { name: it.name }))) return
     const r = await fetch(endpoint, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: it.id }) })
     const d = await r.json().catch(() => ({}))
-    if (d.deactivated) alert('Registro em uso — foi desativado em vez de excluído.')
+    if (d.deactivated) alert(t('deactivated'))
     load()
   }
 
@@ -118,10 +120,10 @@ export default function HierCrud({ endpoint, title, subtitle, parentLabel, paren
         </div>
         <div className="flex items-center gap-2">
           <button type="button" onClick={downloadTemplate} className="btn-secondary text-sm flex items-center gap-1.5">
-            <Download className="w-4 h-4" /> Modelo CSV
+            <Download className="w-4 h-4" /> {t('modelCsv')}
           </button>
           <label className="btn-secondary text-sm flex items-center gap-1.5 cursor-pointer">
-            <Upload className="w-4 h-4" /> Importar CSV/XLSX
+            <Upload className="w-4 h-4" /> {t('importCsv')}
             <input type="file" accept=".csv,.txt,.xlsx,.xls" className="hidden" onChange={handleImport} />
           </label>
         </div>
@@ -135,10 +137,10 @@ export default function HierCrud({ endpoint, title, subtitle, parentLabel, paren
         return (
           <div className="card p-4 mb-5 border border-blue-100">
             <div className="flex flex-wrap items-center gap-2 mb-3">
-              <span className="text-sm font-semibold text-slate-800">Pré-visualização</span>
-              <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">{nNew} novas</span>
-              {nDup > 0 && <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">{nDup} já existem (puladas)</span>}
-              {nInv > 0 && <span className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded-full">{nInv} inválidas</span>}
+              <span className="text-sm font-semibold text-slate-800">{t('preview')}</span>
+              <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">{t('nNew', { n: nNew })}</span>
+              {nDup > 0 && <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">{t('nDup', { n: nDup })}</span>}
+              {nInv > 0 && <span className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded-full">{t('nInv', { n: nInv })}</span>}
               <span className="text-xs text-slate-400 ml-auto">{previewName}</span>
             </div>
             <div className="max-h-48 overflow-y-auto rounded-lg border border-slate-100 divide-y divide-slate-50">
@@ -146,17 +148,17 @@ export default function HierCrud({ endpoint, title, subtitle, parentLabel, paren
                 <div key={i} className="flex items-center gap-2 px-3 py-1.5 text-xs">
                   <span className={clsx('w-2 h-2 rounded-full shrink-0',
                     p.status === 'new' ? 'bg-emerald-500' : p.status === 'dup' ? 'bg-amber-500' : 'bg-red-500')} />
-                  <span className="font-mono text-slate-600">{p.code || '(sem código)'}</span>
-                  <span className="text-slate-700 truncate">{p.name || '(sem nome)'}</span>
+                  <span className="font-mono text-slate-600">{p.code || t('noCode')}</span>
+                  <span className="text-slate-700 truncate">{p.name || t('noName')}</span>
                   <span className="text-slate-400 ml-auto">{p.parent_label || <span className="text-amber-600">{parentLabel}?</span>}</span>
                 </div>
               ))}
-              {preview.length > 50 && <div className="px-3 py-1.5 text-xs text-slate-400">+ {preview.length - 50} linhas…</div>}
+              {preview.length > 50 && <div className="px-3 py-1.5 text-xs text-slate-400">{t('moreLines', { n: preview.length - 50 })}</div>}
             </div>
             <div className="flex justify-end gap-2 mt-3">
-              <button type="button" onClick={() => { setPreview(null); setPreviewName('') }} className="btn-secondary text-sm">Cancelar</button>
+              <button type="button" onClick={() => { setPreview(null); setPreviewName('') }} className="btn-secondary text-sm">{tc('cancel')}</button>
               <button type="button" onClick={doImport} disabled={importing || nNew === 0} className="btn-primary text-sm flex items-center gap-1.5">
-                <Upload className="w-4 h-4" /> {importing ? 'Importando…' : `Importar ${nNew} nova(s)`}
+                <Upload className="w-4 h-4" /> {importing ? t('importing') : t('importNew', { n: nNew })}
               </button>
             </div>
           </div>
@@ -165,24 +167,24 @@ export default function HierCrud({ endpoint, title, subtitle, parentLabel, paren
 
       <GuideCard storageKey={endpoint}
         steps={[
-          `Informe Código e Nome de ${title}.`,
-          `Selecione o(a) ${parentLabel} ao qual o registro pertence.`,
-          'Para cadastrar em lote, baixe o Modelo CSV e use Importar CSV/XLSX.',
+          t('hierStep1', { title }),
+          t('hierStep2', { parent: parentLabel }),
+          t('guideStep3'),
         ]}
-        note={`Cadastre antes o(a) ${parentLabel}, que é obrigatório aqui.`} />
+        note={t('hierNote', { parent: parentLabel })} />
 
       <form onSubmit={submit} className="card p-4 mb-5">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-slate-800">{editing ? 'Editar' : 'Novo'}</h2>
-          {editing && <button type="button" onClick={reset} className="text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1"><X className="w-3.5 h-3.5" /> cancelar</button>}
+          <h2 className="text-sm font-semibold text-slate-800">{editing ? tc('edit') : t('newH')}</h2>
+          {editing && <button type="button" onClick={reset} className="text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1"><X className="w-3.5 h-3.5" /> {tc('cancel')}</button>}
         </div>
         <div className="flex flex-wrap items-end gap-3">
           <div className="w-32">
-            <label className="label">Código</label>
+            <label className="label">{t('code')}</label>
             <input className="input" value={form.code} onChange={e => set('code', e.target.value)} />
           </div>
           <div className="flex-1 min-w-[180px]">
-            <label className="label">Nome</label>
+            <label className="label">{t('name')}</label>
             <input className="input" value={form.name} onChange={e => set('name', e.target.value)} />
           </div>
           <div className="min-w-[180px]">
@@ -193,7 +195,7 @@ export default function HierCrud({ endpoint, title, subtitle, parentLabel, paren
             </select>
           </div>
           <button className="btn-primary flex items-center gap-1.5" disabled={saving}>
-            <Plus className="w-4 h-4" /> {saving ? 'Salvando…' : editing ? 'Salvar' : 'Adicionar'}
+            <Plus className="w-4 h-4" /> {saving ? tc('save') + '…' : editing ? tc('save') : t('add')}
           </button>
         </div>
         {err && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2 mt-3">{err}</p>}
@@ -202,43 +204,43 @@ export default function HierCrud({ endpoint, title, subtitle, parentLabel, paren
       <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input className="input pl-9" placeholder={`Buscar em ${title.toLowerCase()}…`} value={q} onChange={e => setQ(e.target.value)} />
+          <input className="input pl-9" placeholder={t('searchIn', { title: title.toLowerCase() })} value={q} onChange={e => setQ(e.target.value)} />
         </div>
-        <span className="text-xs text-slate-400">{shown.length} de {items.length}</span>
+        <span className="text-xs text-slate-400">{t('shownOf', { shown: shown.length, total: items.length })}</span>
       </div>
 
       <div className="card overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-100 text-xs font-medium text-slate-500">
-              <th className="text-left px-4 py-2">Código</th>
-              <th className="text-left px-4 py-2">Nome</th>
+              <th className="text-left px-4 py-2">{t('code')}</th>
+              <th className="text-left px-4 py-2">{t('name')}</th>
               <th className="text-left px-4 py-2">{parentLabel}</th>
-              <th className="text-center px-4 py-2">Ativo</th>
+              <th className="text-center px-4 py-2">{t('colActive')}</th>
               <th className="px-4 py-2 w-20" />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
             {shown.length === 0 && (
               <tr><td colSpan={5} className="px-4 py-8 text-center">
-                {q.trim() ? <span className="text-slate-400">Nada encontrado para a busca</span>
+                {q.trim() ? <span className="text-slate-400">{t('nothingFound')}</span>
                   : teach ? (
                     <div className="text-slate-500 max-w-md mx-auto">
-                      <p className="font-semibold text-slate-700">Você ainda não tem {teach.what}</p>
+                      <p className="font-semibold text-slate-700">{t('teachEmpty', { what: teach.what })}</p>
                       {teach.example && <p className="text-sm mt-1">{teach.example}</p>}
-                      <p className="text-xs text-slate-400 mt-2">Cadastre o primeiro no formulário acima.</p>
+                      <p className="text-xs text-slate-400 mt-2">{t('teachHint')}</p>
                     </div>
-                  ) : <span className="text-slate-400">Nenhum registro</span>}
+                  ) : <span className="text-slate-400">{tc('none')}</span>}
               </td></tr>
             )}
             {shown.map(it => (
               <tr key={it.id} className={clsx('hover:bg-slate-50', !it.is_active && 'opacity-50')}>
                 <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{it.code}</td>
                 <td className="px-4 py-2.5 text-slate-800">{it.name}</td>
-                <td className="px-4 py-2.5 text-slate-600 text-xs">{it.parent_name || <span className="text-amber-600">— definir —</span>}</td>
+                <td className="px-4 py-2.5 text-slate-600 text-xs">{it.parent_name || <span className="text-amber-600">{t('toDefine')}</span>}</td>
                 <td className="px-4 py-2.5 text-center">
                   <button onClick={() => toggle(it)} className={clsx('px-2 py-0.5 rounded-full text-xs font-medium', it.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500')}>
-                    {it.is_active ? 'Sim' : 'Não'}
+                    {it.is_active ? tc('yes') : tc('no')}
                   </button>
                 </td>
                 <td className="px-4 py-2.5 text-right whitespace-nowrap">
