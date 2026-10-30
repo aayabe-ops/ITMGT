@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
 import { AuthUser } from '@/lib/auth'
-import { MONTHS_PT } from '@/lib/types'
 import { yearOptions, DEFAULT_YEAR } from '@/lib/years'
 import { RefreshCw } from 'lucide-react'
 import clsx from 'clsx'
@@ -18,7 +18,7 @@ const BRLk = (n: number) => {
 }
 
 // ── Bridge / Waterfall (ECharts) ──
-function BridgeChart({ budget: budget0, actual: actual0, steps: steps0, factor = 1, cur = 'BRL', startLabel = 'Orçado', endLabel = 'Realizado' }: {
+function BridgeChart({ budget: budget0, actual: actual0, steps: steps0, factor = 1, cur = 'BRL', startLabel = '', endLabel = '' }: {
   budget: number; actual: number; steps: { label: string; delta: number }[]; factor?: number; cur?: string; startLabel?: string; endLabel?: string
 }) {
   const budget = budget0 * factor, actual = actual0 * factor
@@ -57,16 +57,16 @@ function BridgeChart({ budget: budget0, actual: actual0, steps: steps0, factor =
 }
 
 // ── Barras agrupadas: Orçado x Realizado por mês (ECharts) ──
-function MonthlyChart({ data, factor = 1, cur = 'BRL' }: { data: { month: number; budget: number; actual: number }[]; factor?: number; cur?: string }) {
+function MonthlyChart({ data, factor = 1, cur = 'BRL', months, budgetLabel, actualLabel }: { data: { month: number; budget: number; actual: number }[]; factor?: number; cur?: string; months: string[]; budgetLabel: string; actualLabel: string }) {
   const option = {
     grid: { left: 56, right: 16, top: 16, bottom: 40 },
-    legend: { data: ['Orçado', 'Realizado'], bottom: 0, textStyle: { color: '#64748b', fontSize: 11 }, itemWidth: 12, itemHeight: 12 },
+    legend: { data: [budgetLabel, actualLabel], bottom: 0, textStyle: { color: '#64748b', fontSize: 11 }, itemWidth: 12, itemHeight: 12 },
     tooltip: { trigger: 'axis', valueFormatter: (v: number) => BRL(v, cur) },
-    xAxis: { type: 'category', data: MONTHS_PT.map(m => m.slice(0, 3)), axisLabel: { color: '#64748b', fontSize: 10 }, axisTick: { show: false } },
+    xAxis: { type: 'category', data: months, axisLabel: { color: '#64748b', fontSize: 10 }, axisTick: { show: false } },
     yAxis: { type: 'value', axisLabel: { formatter: (v: number) => BRLk(v), color: '#94a3b8', fontSize: 10 }, splitLine: { lineStyle: { color: '#eef2f6' } } },
     series: [
-      { name: 'Orçado', type: 'bar', data: data.map(d => d.budget * factor), itemStyle: { color: '#cbd5e1', borderRadius: [2, 2, 0, 0] } },
-      { name: 'Realizado', type: 'bar', itemStyle: { color: '#0F4C81' }, data: data.map(d => ({ value: d.actual * factor, itemStyle: { color: d.actual === 0 ? '#e2e8f0' : d.actual <= d.budget ? '#10b981' : '#ef4444', borderRadius: [2, 2, 0, 0] } })) },
+      { name: budgetLabel, type: 'bar', data: data.map(d => d.budget * factor), itemStyle: { color: '#cbd5e1', borderRadius: [2, 2, 0, 0] } },
+      { name: actualLabel, type: 'bar', itemStyle: { color: '#0F4C81' }, data: data.map(d => ({ value: d.actual * factor, itemStyle: { color: d.actual === 0 ? '#e2e8f0' : d.actual <= d.budget ? '#10b981' : '#ef4444', borderRadius: [2, 2, 0, 0] } })) },
     ],
   }
   return <ReactECharts option={option} style={{ height: 300 }} notMerge lazyUpdate />
@@ -85,6 +85,15 @@ interface Props {
 }
 
 export default function DashboardClient({ user, units, categories, suppliers, countries, platforms, scope, defaultUnitId }: Props) {
+  const t = useTranslations('dash')
+  const tc = useTranslations('common')
+  const locale = useLocale()
+  const intlLoc = locale === 'pt' ? 'pt-BR' : locale
+  const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+  const monShort = useMemo(() => Array.from({ length: 12 }, (_, i) => cap(new Intl.DateTimeFormat(intlLoc, { month: 'short' }).format(new Date(2021, i, 1)).replace('.', '').slice(0, 3))), [intlLoc])
+  const monLong = useMemo(() => Array.from({ length: 12 }, (_, i) => cap(new Intl.DateTimeFormat(intlLoc, { month: 'long' }).format(new Date(2021, i, 1)))), [intlLoc])
+  const bInit = t('abBudget').charAt(0), aInit = t('abActual').charAt(0)
+
   // travas de escopo (não-admin): unidade > país > plataforma. Admin/sem restrição vê todas.
   const lockUnit = user.role !== 'admin' && !!scope.unit_id
   const lockCountry = user.role !== 'admin' && !scope.unit_id && !!scope.country_id
@@ -165,7 +174,6 @@ export default function DashboardClient({ user, units, categories, suppliers, co
 
     if (month === 0) {
       const qp = (mode: string) => { const p = base(); p.set('mode', mode); return p.toString() }
-      // ano anterior (mesmo escopo/moeda) para a bridge YoY de budget
       const prevP = new URLSearchParams(base()); prevP.set('year', String(year - 1)); prevP.set('month', '0')
       const [md, mx, pv] = await Promise.all([
         fetch(`/api/dashboard?${qp('monthly')}`).then(r => r.json()).catch(() => []),
@@ -175,7 +183,6 @@ export default function DashboardClient({ user, units, categories, suppliers, co
       setMonthly(Array.isArray(md) ? md : [])
       setMatrix(Array.isArray(mx) ? mx : [])
       setPrevRows(Array.isArray(pv) ? pv : [])
-      // Painel executivo (F5)
       const ep = new URLSearchParams({ year: String(year) })
       if (effPlatformId) ep.set('platform_id', effPlatformId)
       if (unitId) ep.set('unit_id', unitId)
@@ -197,7 +204,6 @@ export default function DashboardClient({ user, units, categories, suppliers, co
   const totVar    = totActual - totBudget
   const totPct    = totBudget ? totVar / totBudget * 100 : 0
 
-  // Agregado por categoria (para comparativo e bridge)
   const catAgg = useMemo(() => {
     const m = new Map<string, { budget: number; actual: number }>()
     for (const r of rows) {
@@ -217,7 +223,6 @@ export default function DashboardClient({ user, units, categories, suppliers, co
 
   const isYear = month === 0
 
-  // Bridge YoY: budget do ano anterior → budget do ano escolhido, por categoria
   const prevCatBudget = useMemo(() => {
     const m = new Map<string, number>()
     for (const r of prevRows) { const k = String(r.category_id); m.set(k, (m.get(k) || 0) + Number(r.budgeted)) }
@@ -234,7 +239,6 @@ export default function DashboardClient({ user, units, categories, suppliers, co
     }).filter(s => s.delta !== 0).sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
   }, [catAgg, prevCatBudget, categories])
 
-  // 12 meses normalizados (preenche meses faltantes com 0)
   const monthly12 = useMemo(() => {
     const m = new Map(monthly.map((r: any) => [Number(r.month), r]))
     return Array.from({ length: 12 }, (_, i) => {
@@ -243,7 +247,6 @@ export default function DashboardClient({ user, units, categories, suppliers, co
     })
   }, [monthly])
 
-  // Pivô: unidade × fornecedor × categoria × 12 meses (orçado/realizado)
   const supMap = useMemo(() => new Map(suppliers.map((s: any) => [String(s.id), s.short_name || s.name])), [suppliers])
   const catMap = useMemo(() => new Map(categories.map((c: any) => [String(c.id), c])), [categories])
   const unidadeMap = useMemo(() => new Map(units.map((u: any) => [String(u.id), u.unidade_nome || null])), [units])
@@ -251,7 +254,7 @@ export default function DashboardClient({ user, units, categories, suppliers, co
     const m = new Map<string, any>()
     for (const r of matrix) {
       const sid = r.supplier_id ? String(r.supplier_id) : ''
-      const uName = unidadeMap.get(String(r.unit_id)) || '— sem unidade'
+      const uName = unidadeMap.get(String(r.unit_id)) || '— ' + t('colUnit')
       const key = `${uName}|${r.category_id}|${sid}`
       let o = m.get(key)
       if (!o) {
@@ -276,7 +279,6 @@ export default function DashboardClient({ user, units, categories, suppliers, co
 
   const [openQ, setOpenQ] = useState<boolean[]>([false, false, false, false])
   const kfmt = (n: number) => (n === 0 ? '–' : BRLk(n * factor))
-  // célula de Δ%: seta ↑ vermelho (acima) / ↓ verde (economia)
   const deltaCell = (b: number, a: number) => {
     if (!b) return <span className="text-slate-300">–</span>
     const p = (a - b) / b * 100
@@ -293,32 +295,34 @@ export default function DashboardClient({ user, units, categories, suppliers, co
     return 'badge-yellow'
   }
 
+  const periodLabel = month === 0 ? t('fullYear', { year: String(year) }) : ytd ? t('ytdThrough', { m: monLong[month - 1], year: String(year) }) : `${monLong[month - 1]}/${year}`
+
   return (
     <div className="page-wide">
       <WelcomeOnboarding user={{ role: user.role, full_name: user.full_name, email: user.email }} />
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="page-title">Dashboard</h1>
-          <p className="text-sm text-slate-500">Orçado × Realizado — {month === 0 ? `Ano inteiro ${year}` : ytd ? `YTD até ${MONTHS_PT[month - 1]}/${year}` : `${MONTHS_PT[month - 1]}/${year}`}</p>
+          <p className="text-sm text-slate-500">{t('bva')} — {periodLabel}</p>
         </div>
         <div className="flex flex-wrap gap-2 items-center">
           {showPlatform && (
             <select className="input w-40 text-sm" value={effPlatformId} disabled={lockPlatform}
               onChange={e => { setPlatformId(e.target.value); setCountryId(''); setUnidadeId(''); if (!lockUnit) setUnitId('') }}>
-              {!lockPlatform && <option value="">Todas as plataformas</option>}
+              {!lockPlatform && <option value="">{t('allPlatforms')}</option>}
               {platformOptions.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           )}
           {(user.role === 'admin' || lockCountry) && (
             <select className="input w-40 text-sm" value={countryId} disabled={lockCountry}
               onChange={e => { setCountryId(e.target.value); setUnidadeId(''); if (!lockUnit) setUnitId('') }}>
-              {!lockCountry && <option value="">Todos os países</option>}
+              {!lockCountry && <option value="">{t('allCountries')}</option>}
               {countryOptions.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           )}
           {!lockUnit && (
             <select className="input w-52 text-sm" value={unidadeId} onChange={e => setUnidadeId(e.target.value)}>
-              <option value="">Todas as unidades</option>
+              <option value="">{t('allUnidades')}</option>
               {unidadeOptions.map((u: any) => <option key={u.id} value={u.id}>{u.name}</option>)}
             </select>
           )}
@@ -326,22 +330,22 @@ export default function DashboardClient({ user, units, categories, suppliers, co
             <span className="text-sm text-slate-600 px-2 py-1 rounded bg-slate-100">{units.find((u: any) => u.id === scope.unit_id)?.code ?? ''}</span>
           )}
           <select className="input w-32 text-sm" value={month} onChange={e => { setMonth(+e.target.value); if (+e.target.value === 0) setYtd(false) }}>
-            <option value={0}>Ano inteiro</option>
-            {MONTHS_PT.map((m, i) => <option key={i + 1} value={i + 1}>{m.slice(0, 3)}</option>)}
+            <option value={0}>{t('fullYearOpt')}</option>
+            {monShort.map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
           </select>
           <button type="button" onClick={() => month >= 1 && setYtd(v => !v)} disabled={month === 0}
-            title="Acumulado do ano até o mês selecionado"
+            title={t('ytdTitle')}
             className={clsx('px-2.5 py-1.5 rounded-lg text-xs font-medium border', ytd && month >= 1 ? 'bg-blue-600 text-white border-blue-600' : month === 0 ? 'text-slate-300 border-slate-200 cursor-not-allowed' : 'text-slate-600 border-slate-200 hover:bg-slate-50')}>YTD</button>
           <select className="input w-24 text-sm" value={year} onChange={e => setYear(+e.target.value)}>
             {yearOptions().map(y => <option key={y} value={y}>{y}</option>)}
           </select>
           <div className="flex rounded-lg border border-slate-200 overflow-hidden text-xs">
             <button type="button" onClick={() => scopedCurrencyCode && setCur('LOCAL')} disabled={!scopedCurrencyCode}
-              title={scopedCurrencyCode ? `Moeda local (${scopedCurrencyCode})` : 'Selecione um país/unidade para ver em moeda local'}
+              title={scopedCurrencyCode ? t('curLocalTitle', { c: scopedCurrencyCode }) : t('curLocalHint')}
               className={clsx('px-2.5 py-1.5 font-medium', !effUsd ? 'bg-blue-600 text-white' : scopedCurrencyCode ? 'text-slate-600 hover:bg-slate-50' : 'text-slate-300 cursor-not-allowed')}>
-              {scopedCurrencyCode || 'Local'}
+              {scopedCurrencyCode || t('localWord')}
             </button>
-            <button type="button" onClick={() => setCur('USD')} title="Consolidado em dólar (US$)"
+            <button type="button" onClick={() => setCur('USD')} title={t('curUsdTitle')}
               className={clsx('px-2.5 py-1.5 font-medium border-l border-slate-200', effUsd ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-50')}>USD</button>
           </div>
           <button onClick={load} className="btn-secondary" disabled={loading}>
@@ -353,13 +357,13 @@ export default function DashboardClient({ user, units, categories, suppliers, co
       {isYear && exec && (
         <div className="card p-5 mb-6">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-slate-800">Painel Executivo — {year}</h2>
-            <span className="text-xs text-slate-400">Forecast = Realizado até {exec.lastActualMonth >= 1 ? MONTHS_PT[exec.lastActualMonth - 1] : '—'} + Orçado restante</span>
+            <h2 className="text-sm font-semibold text-slate-800">{t('execTitle', { year: String(year) })}</h2>
+            <span className="text-xs text-slate-400">{t('execNote', { m: exec.lastActualMonth >= 1 ? monLong[exec.lastActualMonth - 1] : '—' })}</span>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
               { label: 'Budget FY', value: BRL(Number(exec.budgetFY), displayCur), color: 'text-slate-800' },
-              { label: 'Realizado YTD', value: BRL(Number(exec.actualYTD), displayCur), color: 'text-slate-800' },
+              { label: t('kActualYtd'), value: BRL(Number(exec.actualYTD), displayCur), color: 'text-slate-800' },
               { label: 'Forecast FY', value: BRL(Number(exec.forecastFY), displayCur), color: 'text-blue-700' },
               { label: 'Forecast vs Budget', value: `${Number(exec.varianceFY) >= 0 ? '+' : ''}${BRL(Number(exec.varianceFY), displayCur)}`, color: Number(exec.varianceFY) > 0 ? 'text-red-600' : 'text-emerald-600' },
               { label: 'OPEX', value: BRL(Number(exec.opex), displayCur), color: 'text-slate-700' },
@@ -378,10 +382,10 @@ export default function DashboardClient({ user, units, categories, suppliers, co
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Orçado',    value: BRL(totBudget * factor, displayCur), color: 'text-slate-800' },
-          { label: 'Realizado', value: BRL(totActual * factor, displayCur), color: 'text-slate-800' },
-          { label: 'Desvio',    value: BRL(totVar * factor, displayCur),    color: totVar > 0 ? 'text-red-600' : totVar < 0 ? 'text-emerald-600' : 'text-slate-800' },
-          { label: 'Desvio %',  value: `${totPct.toFixed(1)}%`, color: totPct > 5 ? 'text-red-600' : totPct < -5 ? 'text-emerald-600' : 'text-yellow-600' },
+          { label: t('kBudget'),  value: BRL(totBudget * factor, displayCur), color: 'text-slate-800' },
+          { label: t('kActual'),  value: BRL(totActual * factor, displayCur), color: 'text-slate-800' },
+          { label: t('kVar'),     value: BRL(totVar * factor, displayCur),    color: totVar > 0 ? 'text-red-600' : totVar < 0 ? 'text-emerald-600' : 'text-slate-800' },
+          { label: t('kVarPct'),  value: `${totPct.toFixed(1)}%`, color: totPct > 5 ? 'text-red-600' : totPct < -5 ? 'text-emerald-600' : 'text-yellow-600' },
         ].map(k => (
           <div key={k.label} className="card p-4">
             <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{k.label}</p>
@@ -392,26 +396,24 @@ export default function DashboardClient({ user, units, categories, suppliers, co
 
       {isYear && (
         <div className="space-y-4 mb-6">
-          {/* Frame — Orçado x Realizado mês a mês */}
           <div className="card p-5">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-slate-800">Orçado × Realizado — mês a mês</h2>
+              <h2 className="text-sm font-semibold text-slate-800">{t('bvaMonthly')}</h2>
               <div className="flex items-center gap-4 text-xs text-slate-500">
-                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#cbd5e1' }} /> Orçado</span>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#10b981' }} /> Realizado (economia)</span>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#ef4444' }} /> Realizado (estouro)</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#cbd5e1' }} /> {t('kBudget')}</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#10b981' }} /> {t('legSaving')}</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#ef4444' }} /> {t('legOverrun')}</span>
               </div>
             </div>
-            <MonthlyChart data={monthly12} factor={factor} cur={displayCur} />
+            <MonthlyChart data={monthly12} factor={factor} cur={displayCur} months={monShort} budgetLabel={t('kBudget')} actualLabel={t('kActual')} />
           </div>
 
-          {/* Frame — Bridge Budget ano anterior → ano escolhido */}
           <div className="card p-5">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-slate-800">Bridge — Budget {year - 1} → {year} (por categoria)</h2>
+              <h2 className="text-sm font-semibold text-slate-800">{t('bridgeTitle', { prev: String(year - 1), year: String(year) })}</h2>
               <div className="flex items-center gap-4 text-xs text-slate-500">
-                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#ef4444' }} /> Aumento vs {year - 1}</span>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#10b981' }} /> Redução vs {year - 1}</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#ef4444' }} /> {t('increaseVs', { year: String(year - 1) })}</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#10b981' }} /> {t('decreaseVs', { year: String(year - 1) })}</span>
               </div>
             </div>
             <BridgeChart budget={prevBudgetTotal} actual={totBudget} steps={bridgeSteps} factor={factor} cur={displayCur} startLabel={String(year - 1)} endLabel={String(year)} />
@@ -422,49 +424,49 @@ export default function DashboardClient({ user, units, categories, suppliers, co
       {isYear && (
         <div className="card overflow-hidden mb-6">
           <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold text-slate-800">Orçado × Realizado — trimestral</h2>
-            <span className="text-xs text-slate-400">Clique <b>Q1–Q4</b> p/ expandir · Δ%: <span className="text-red-600">▲ acima</span> / <span className="text-emerald-600">▼ economia</span> · valores em k</span>
+            <h2 className="text-sm font-semibold text-slate-800">{t('bvaQuarterly')}</h2>
+            <span className="text-xs text-slate-400">{t('qhExpand')} · Δ%: <span className="text-red-600">▲ {t('qhAbove')}</span> / <span className="text-emerald-600">▼ {t('qhSaving')}</span> · {t('qhUnit')}</span>
           </div>
           <div className="overflow-x-auto">
             <table className="text-[11px] whitespace-nowrap">
               <thead>
                 <tr className="text-white uppercase tracking-wide" style={{ backgroundColor: '#0F4C81' }}>
-                  <th rowSpan={2} className="text-left px-3 py-2.5 font-semibold sticky left-0 z-10" style={{ backgroundColor: '#0F4C81' }}>Unidade</th>
-                  <th rowSpan={2} className="text-left px-3 py-2.5 font-semibold">Fornecedor</th>
-                  <th rowSpan={2} className="text-left px-3 py-2.5 font-semibold">Categoria</th>
-                  <th rowSpan={2} className="text-left px-3 py-2.5 font-semibold">Descrição</th>
+                  <th rowSpan={2} className="text-left px-3 py-2.5 font-semibold sticky left-0 z-10" style={{ backgroundColor: '#0F4C81' }}>{t('colUnit')}</th>
+                  <th rowSpan={2} className="text-left px-3 py-2.5 font-semibold">{t('colSupplier')}</th>
+                  <th rowSpan={2} className="text-left px-3 py-2.5 font-semibold">{t('colCategory')}</th>
+                  <th rowSpan={2} className="text-left px-3 py-2.5 font-semibold">{t('colDescription')}</th>
                   {[0, 1, 2, 3].map(q => (
                     <th key={q} colSpan={openQ[q] ? 12 : 3} onClick={() => setOpenQ(o => o.map((v, i) => i === q ? !v : v))}
                       className="text-center px-2 py-2.5 font-semibold border-l border-white/20 cursor-pointer hover:bg-white/10 select-none transition-colors">
                       {openQ[q] ? '▾' : '▸'} Q{q + 1}
                     </th>
                   ))}
-                  <th colSpan={4} className="text-center px-2 py-2.5 font-semibold border-l-2 border-white/40">Ano {year}</th>
+                  <th colSpan={4} className="text-center px-2 py-2.5 font-semibold border-l-2 border-white/40">{t('yearN', { year: String(year) })}</th>
                 </tr>
                 <tr className="text-[10px] text-blue-100 uppercase" style={{ backgroundColor: '#1A5E96' }}>
                   {[0, 1, 2, 3].map(q => (
                     <Fragment key={q}>
                       {openQ[q] && [0, 1, 2].map(j => (
                         <Fragment key={j}>
-                          <th className="px-1.5 py-1 text-right font-medium border-l border-white/10">{MONTHS_PT[q * 3 + j].slice(0, 3)} O</th>
-                          <th className="px-1.5 py-1 text-right font-medium">R</th>
+                          <th className="px-1.5 py-1 text-right font-medium border-l border-white/10">{monShort[q * 3 + j]} {bInit}</th>
+                          <th className="px-1.5 py-1 text-right font-medium">{aInit}</th>
                           <th className="px-1.5 py-1 text-right font-medium">Δ%</th>
                         </Fragment>
                       ))}
-                      <th className={clsx('px-1.5 py-1 text-right font-medium', !openQ[q] && 'border-l border-white/20')}>Orç</th>
-                      <th className="px-1.5 py-1 text-right font-medium">Real</th>
+                      <th className={clsx('px-1.5 py-1 text-right font-medium', !openQ[q] && 'border-l border-white/20')}>{t('abBudget')}</th>
+                      <th className="px-1.5 py-1 text-right font-medium">{t('abActual')}</th>
                       <th className="px-1.5 py-1 text-right font-medium">Δ%</th>
                     </Fragment>
                   ))}
-                  <th className="px-1.5 py-1 text-right font-medium border-l-2 border-white/40">Orç</th>
-                  <th className="px-1.5 py-1 text-right font-medium">Real</th>
-                  <th className="px-1.5 py-1 text-right font-medium">Desvio</th>
+                  <th className="px-1.5 py-1 text-right font-medium border-l-2 border-white/40">{t('abBudget')}</th>
+                  <th className="px-1.5 py-1 text-right font-medium">{t('abActual')}</th>
+                  <th className="px-1.5 py-1 text-right font-medium">{t('abVar')}</th>
                   <th className="px-1.5 py-1 text-right font-medium">Δ%</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {pivot.length === 0 && (
-                  <tr><td colSpan={40} className="px-4 py-10 text-center text-slate-400">{loading ? 'Carregando…' : 'Nenhum dado para o período'}</td></tr>
+                  <tr><td colSpan={40} className="px-4 py-10 text-center text-slate-400">{loading ? tc('loading') : t('noData')}</td></tr>
                 )}
                 {pivot.map((row: any, ri: number) => {
                   const zebra = ri % 2 === 1
@@ -504,7 +506,7 @@ export default function DashboardClient({ user, units, categories, suppliers, co
               </tbody>
               <tfoot>
                 <tr className="bg-slate-100 border-t-2 border-slate-300 font-bold text-slate-800">
-                  <td colSpan={4} className="px-3 py-2.5 sticky left-0 bg-slate-100 z-10 uppercase tracking-wide text-[11px]">Total</td>
+                  <td colSpan={4} className="px-3 py-2.5 sticky left-0 bg-slate-100 z-10 uppercase tracking-wide text-[11px]">{t('total')}</td>
                   {[0, 1, 2, 3].map(q => {
                     const qb = monthly12[q * 3].budget + monthly12[q * 3 + 1].budget + monthly12[q * 3 + 2].budget
                     const qa = monthly12[q * 3].actual + monthly12[q * 3 + 1].actual + monthly12[q * 3 + 2].actual
@@ -540,17 +542,17 @@ export default function DashboardClient({ user, units, categories, suppliers, co
           <table className="tbl w-full text-sm">
             <thead>
               <tr className="text-xs text-slate-500 uppercase tracking-wide bg-slate-50 border-b border-slate-100">
-                <th className="text-left px-4 py-3 font-medium">Unidade</th>
-                <th className="text-left px-4 py-3 font-medium">Categoria</th>
-                <th className="text-right px-4 py-3 font-medium">Orçado</th>
-                <th className="text-right px-4 py-3 font-medium">Realizado</th>
-                <th className="text-right px-4 py-3 font-medium">Desvio</th>
+                <th className="text-left px-4 py-3 font-medium">{t('colUnit')}</th>
+                <th className="text-left px-4 py-3 font-medium">{t('colCategory')}</th>
+                <th className="text-right px-4 py-3 font-medium">{t('kBudget')}</th>
+                <th className="text-right px-4 py-3 font-medium">{t('kActual')}</th>
+                <th className="text-right px-4 py-3 font-medium">{t('kVar')}</th>
                 <th className="text-center px-4 py-3 font-medium">%</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {rows.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-400">{loading ? 'Carregando…' : 'Nenhum dado para o período'}</td></tr>
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-400">{loading ? tc('loading') : t('noData')}</td></tr>
               )}
               {rows.map((r: any, i: number) => {
                 const variance = Number(r.variance)
