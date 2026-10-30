@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { Plus, Trash2, Upload, Download, Pencil, X, Search } from 'lucide-react'
 import clsx from 'clsx'
 import { csvDownload, readTable } from '@/lib/csv'
@@ -13,6 +14,8 @@ export default function LookupCrud({ endpoint, title, subtitle, hasDescription =
   guideSteps?: string[]; guideNote?: string; extraFields?: ExtraField[]
   teach?: { what: string; example?: string }
 }) {
+  const t = useTranslations('lookup')
+  const tc = useTranslations('common')
   const [items, setItems] = useState<Item[]>([])
   const [code, setCode] = useState('')
   const [name, setName] = useState('')
@@ -27,7 +30,6 @@ export default function LookupCrud({ endpoint, title, subtitle, hasDescription =
   const shown = q.trim()
     ? items.filter(it => [it.code, it.name, it.description, ...extraFields.map(f => extraFields.find(x => x.key === f.key)?.options.find(o => o.value === it[f.key])?.label)].some(v => nq(v).includes(nq(q))))
     : items
-  // preview de importação (antes de gravar)
   type Prev = { code: string; name: string; description?: string; status: 'new' | 'dup' | 'invalid' }
   const [preview, setPreview] = useState<Prev[] | null>(null)
   const [previewName, setPreviewName] = useState('')
@@ -51,7 +53,7 @@ export default function LookupCrud({ endpoint, title, subtitle, hasDescription =
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (!code.trim() || !name.trim()) { setErr('Preencha código e nome.'); return }
+    if (!code.trim() || !name.trim()) { setErr(t('reqCodeName')); return }
     setSaving(true); setErr('')
     const payload: any = { code: code.trim(), name: name.trim() }
     if (hasDescription) payload.description = desc.trim() || null
@@ -63,7 +65,7 @@ export default function LookupCrud({ endpoint, title, subtitle, hasDescription =
       body: JSON.stringify(payload),
     })
     const d = await r.json().catch(() => ({}))
-    if (!r.ok) setErr(d.error || 'Erro ao salvar.')
+    if (!r.ok) setErr(d.error || tc('saveError'))
     else { resetForm(); load() }
     setSaving(false)
   }
@@ -73,10 +75,10 @@ export default function LookupCrud({ endpoint, title, subtitle, hasDescription =
     load()
   }
   async function remove(it: Item) {
-    if (!confirm(`Excluir "${it.name}"?`)) return
+    if (!confirm(t('confirmDelete', { name: it.name }))) return
     const r = await fetch(endpoint, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: it.id }) })
     const d = await r.json().catch(() => ({}))
-    if (!r.ok) alert(d.error || 'Não foi possível excluir (pode estar em uso). Foi desativado.')
+    if (!r.ok) alert(d.error || t('deleteUsed'))
     load()
   }
 
@@ -86,7 +88,6 @@ export default function LookupCrud({ endpoint, title, subtitle, hasDescription =
     csvDownload('modelo_cadastro.csv', header, ex)
   }
 
-  // Monta o PREVIEW (não grava) — mostra novas, já existentes e inválidas antes de confirmar.
   async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]; if (!file) return
     setErr(''); setImpMsg('')
@@ -94,7 +95,7 @@ export default function LookupCrud({ endpoint, title, subtitle, hasDescription =
     const iC = headers.findIndex(h => ['codigo', 'code', 'cod'].includes(h))
     const iN = headers.findIndex(h => ['nome', 'name'].includes(h))
     const iD = headers.findIndex(h => ['descricao', 'description', 'desc'].includes(h))
-    if (iC < 0 || iN < 0) { setErr('CSV inválido: precisa das colunas "codigo" e "nome".'); e.target.value = ''; return }
+    if (iC < 0 || iN < 0) { setErr(t('csvInvalid')); e.target.value = ''; return }
     const nc = (s: string) => String(s || '').trim().toLowerCase()
     const existing = new Set(items.map(i => nc(i.code)))
     const rows: Prev[] = data.map(r => {
@@ -106,7 +107,6 @@ export default function LookupCrud({ endpoint, title, subtitle, hasDescription =
     setPreview(rows); setPreviewName(file.name); e.target.value = ''
   }
 
-  // Grava apenas as linhas NOVAS (já existentes e inválidas são puladas).
   async function doImport() {
     if (!preview) return
     setImporting(true)
@@ -120,7 +120,7 @@ export default function LookupCrud({ endpoint, title, subtitle, hasDescription =
     const dup = preview.filter(p => p.status === 'dup').length
     const inv = preview.filter(p => p.status === 'invalid').length
     setImporting(false); setPreview(null); setPreviewName('')
-    setImpMsg(`Importação: ${ok} criado(s)${fail ? `, ${fail} com erro` : ''}${dup ? `, ${dup} já existente(s) puladas` : ''}${inv ? `, ${inv} inválida(s)` : ''}.`)
+    setImpMsg(`${t('impPrefix')} ${t('impCreated', { n: ok })}${fail ? t('impErr', { n: fail }) : ''}${dup ? t('impDup', { n: dup }) : ''}${inv ? t('impInvalid', { n: inv }) : ''}.`)
     load()
   }
 
@@ -133,10 +133,10 @@ export default function LookupCrud({ endpoint, title, subtitle, hasDescription =
         </div>
         <div className="flex items-center gap-2">
           <button type="button" onClick={downloadTemplate} className="btn-secondary text-sm flex items-center gap-1.5">
-            <Download className="w-4 h-4" /> Modelo CSV
+            <Download className="w-4 h-4" /> {t('modelCsv')}
           </button>
           <label className="btn-secondary text-sm flex items-center gap-1.5 cursor-pointer">
-            <Upload className="w-4 h-4" /> Importar CSV/XLSX
+            <Upload className="w-4 h-4" /> {t('importCsv')}
             <input type="file" accept=".csv,.txt,.xlsx,.xls" className="hidden" onChange={handleImport} />
           </label>
         </div>
@@ -150,10 +150,10 @@ export default function LookupCrud({ endpoint, title, subtitle, hasDescription =
         return (
           <div className="card p-4 mb-5 border border-blue-100">
             <div className="flex flex-wrap items-center gap-2 mb-3">
-              <span className="text-sm font-semibold text-slate-800">Pré-visualização</span>
-              <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">{nNew} novas</span>
-              {nDup > 0 && <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">{nDup} já existem (puladas)</span>}
-              {nInv > 0 && <span className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded-full">{nInv} inválidas</span>}
+              <span className="text-sm font-semibold text-slate-800">{t('preview')}</span>
+              <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">{t('nNew', { n: nNew })}</span>
+              {nDup > 0 && <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">{t('nDup', { n: nDup })}</span>}
+              {nInv > 0 && <span className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded-full">{t('nInv', { n: nInv })}</span>}
               <span className="text-xs text-slate-400 ml-auto">{previewName}</span>
             </div>
             <div className="max-h-48 overflow-y-auto rounded-lg border border-slate-100 divide-y divide-slate-50">
@@ -161,17 +161,17 @@ export default function LookupCrud({ endpoint, title, subtitle, hasDescription =
                 <div key={i} className="flex items-center gap-2 px-3 py-1.5 text-xs">
                   <span className={clsx('w-2 h-2 rounded-full shrink-0',
                     p.status === 'new' ? 'bg-emerald-500' : p.status === 'dup' ? 'bg-amber-500' : 'bg-red-500')} />
-                  <span className="font-mono text-slate-600">{p.code || '(sem código)'}</span>
-                  <span className="text-slate-700 truncate">{p.name || '(sem nome)'}</span>
+                  <span className="font-mono text-slate-600">{p.code || t('noCode')}</span>
+                  <span className="text-slate-700 truncate">{p.name || t('noName')}</span>
                   {hasDescription && p.description && <span className="text-slate-400 truncate">· {p.description}</span>}
                 </div>
               ))}
-              {preview.length > 50 && <div className="px-3 py-1.5 text-xs text-slate-400">+ {preview.length - 50} linhas…</div>}
+              {preview.length > 50 && <div className="px-3 py-1.5 text-xs text-slate-400">{t('moreLines', { n: preview.length - 50 })}</div>}
             </div>
             <div className="flex justify-end gap-2 mt-3">
-              <button type="button" onClick={() => { setPreview(null); setPreviewName('') }} className="btn-secondary text-sm">Cancelar</button>
+              <button type="button" onClick={() => { setPreview(null); setPreviewName('') }} className="btn-secondary text-sm">{tc('cancel')}</button>
               <button type="button" onClick={doImport} disabled={importing || nNew === 0} className="btn-primary text-sm flex items-center gap-1.5">
-                <Upload className="w-4 h-4" /> {importing ? 'Importando…' : `Importar ${nNew} nova(s)`}
+                <Upload className="w-4 h-4" /> {importing ? t('importing') : t('importNew', { n: nNew })}
               </button>
             </div>
           </div>
@@ -180,26 +180,26 @@ export default function LookupCrud({ endpoint, title, subtitle, hasDescription =
 
       <GuideCard storageKey={endpoint}
         steps={guideSteps || [
-          `Informe um Código único (ex.: SW, HW) e um Nome para ${title}.`,
-          'Clique em Adicionar. Para editar use o lápis; para desativar, o botão da coluna Ativo.',
-          'Para cadastrar em lote, baixe o Modelo CSV, preencha e use Importar CSV/XLSX.',
+          t('guideStep1', { title }),
+          t('guideStep2'),
+          t('guideStep3'),
         ]}
-        note={guideNote || 'Cadastro de referência (código + nome) usado nos demais formulários — mantenha os códigos padronizados.'}
+        note={guideNote || t('guideNote')}
       />
 
       <form onSubmit={submit} className="card p-4 mb-5 flex flex-wrap items-end gap-3">
         <div className="w-32">
-          <label className="label">Código</label>
+          <label className="label">{t('code')}</label>
           <input className="input" value={code} onChange={e => setCode(e.target.value)} placeholder="EX: SW" />
         </div>
         <div className="flex-1 min-w-[180px]">
-          <label className="label">Nome</label>
-          <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Descrição do item" />
+          <label className="label">{t('name')}</label>
+          <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder={t('namePh')} />
         </div>
         {hasDescription && (
           <div className="flex-1 min-w-[180px]">
-            <label className="label">Descrição</label>
-            <input className="input" value={desc} onChange={e => setDesc(e.target.value)} placeholder="opcional" />
+            <label className="label">{t('descr')}</label>
+            <input className="input" value={desc} onChange={e => setDesc(e.target.value)} placeholder={t('descPh')} />
           </div>
         )}
         {extraFields.map(f => (
@@ -212,11 +212,11 @@ export default function LookupCrud({ endpoint, title, subtitle, hasDescription =
           </div>
         ))}
         <button className="btn-primary flex items-center gap-1.5" disabled={saving}>
-          <Plus className="w-4 h-4" /> {saving ? 'Salvando…' : editId ? 'Salvar' : 'Adicionar'}
+          <Plus className="w-4 h-4" /> {saving ? tc('save') + '…' : editId ? tc('save') : t('add')}
         </button>
         {editId && (
           <button type="button" onClick={resetForm} className="btn-secondary flex items-center gap-1.5">
-            <X className="w-4 h-4" /> Cancelar
+            <X className="w-4 h-4" /> {tc('cancel')}
           </button>
         )}
       </form>
@@ -225,34 +225,34 @@ export default function LookupCrud({ endpoint, title, subtitle, hasDescription =
       <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input className="input pl-9" placeholder={`Buscar em ${title.toLowerCase()}…`} value={q} onChange={e => setQ(e.target.value)} />
+          <input className="input pl-9" placeholder={t('searchIn', { title: title.toLowerCase() })} value={q} onChange={e => setQ(e.target.value)} />
         </div>
-        <span className="text-xs text-slate-400">{shown.length} de {items.length}</span>
+        <span className="text-xs text-slate-400">{t('shownOf', { shown: shown.length, total: items.length })}</span>
       </div>
 
       <div className="card overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-100 text-xs font-medium text-slate-500">
-              <th className="text-left px-4 py-2">Código</th>
-              <th className="text-left px-4 py-2">Nome</th>
-              {hasDescription && <th className="text-left px-4 py-2">Descrição</th>}
+              <th className="text-left px-4 py-2">{t('code')}</th>
+              <th className="text-left px-4 py-2">{t('name')}</th>
+              {hasDescription && <th className="text-left px-4 py-2">{t('descr')}</th>}
               {extraFields.map(f => <th key={f.key} className="text-left px-4 py-2">{f.label}</th>)}
-              <th className="text-center px-4 py-2">Ativo</th>
+              <th className="text-center px-4 py-2">{t('colActive')}</th>
               <th className="px-4 py-2 w-10" />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
             {shown.length === 0 && (
               <tr><td colSpan={4 + (hasDescription ? 1 : 0) + extraFields.length} className="px-4 py-8 text-center">
-                {q.trim() ? <span className="text-slate-400">Nada encontrado para a busca</span>
+                {q.trim() ? <span className="text-slate-400">{t('nothingFound')}</span>
                   : teach ? (
                     <div className="text-slate-500 max-w-md mx-auto">
-                      <p className="font-semibold text-slate-700">Você ainda não tem {teach.what}</p>
+                      <p className="font-semibold text-slate-700">{t('teachEmpty', { what: teach.what })}</p>
                       {teach.example && <p className="text-sm mt-1">{teach.example}</p>}
-                      <p className="text-xs text-slate-400 mt-2">Cadastre o primeiro no formulário acima.</p>
+                      <p className="text-xs text-slate-400 mt-2">{t('teachHint')}</p>
                     </div>
-                  ) : <span className="text-slate-400">Nenhum registro</span>}
+                  ) : <span className="text-slate-400">{tc('none')}</span>}
               </td></tr>
             )}
             {shown.map(it => (
@@ -268,7 +268,7 @@ export default function LookupCrud({ endpoint, title, subtitle, hasDescription =
                 <td className="px-4 py-2.5 text-center">
                   <button onClick={() => toggle(it)}
                     className={clsx('px-2 py-0.5 rounded-full text-xs font-medium', it.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500')}>
-                    {it.is_active ? 'Sim' : 'Não'}
+                    {it.is_active ? tc('yes') : tc('no')}
                   </button>
                 </td>
                 <td className="px-4 py-2.5 text-right whitespace-nowrap">

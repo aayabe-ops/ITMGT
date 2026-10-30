@@ -1,16 +1,18 @@
 import { getCurrentUser } from '@/lib/auth'
+import { getTranslations } from 'next-intl/server'
 import { redirect } from 'next/navigation'
 import Layout from '@/components/Layout'
 import LookupCrud from '@/components/LookupCrud'
 
-export default function Page() {
+export default async function Page() {
   const user = getCurrentUser()
   if (!user) redirect('/login')
   if (user.role !== 'admin') redirect('/')
+  const t = await getTranslations('cad')
   return (
     <Layout user={user}>
-      <LookupCrud endpoint="/api/solution-types" title="Solution Type" subtitle="Tipo de solução de TI"
-        teach={{ what: 'áreas de TI (Solution Type)', example: 'A área de TI de um serviço. Ex.: Redes, Segurança, ERP, Service Desk.' }} />
+      <LookupCrud endpoint="/api/solution-types" title={t('solutionTitle')} subtitle={t('solutionSub')}
+        teach={{ what: t('solutionWhat'), example: t('solutionEx') }} />
     </Layout>
   )
 }

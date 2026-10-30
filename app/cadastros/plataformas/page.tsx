@@ -1,16 +1,18 @@
 import { getCurrentUser } from '@/lib/auth'
+import { getTranslations } from 'next-intl/server'
 import { redirect } from 'next/navigation'
 import Layout from '@/components/Layout'
 import LookupCrud from '@/components/LookupCrud'
 
-export default function Page() {
+export default async function Page() {
   const user = getCurrentUser()
   if (!user) redirect('/login')
   if (user.role !== 'admin') redirect('/')
+  const t = await getTranslations('cad')
   return (
     <Layout user={user}>
-      <LookupCrud endpoint="/api/platforms" title="Plataformas" subtitle="Nível mais alto da hierarquia (3 plataformas)"
-        teach={{ what: 'plataformas', example: 'A plataforma é o nível mais alto da estrutura — a regional da empresa. Ex.: Emergent Cold Brasil.' }} />
+      <LookupCrud endpoint="/api/platforms" title={t('platformsTitle')} subtitle={t('platformsSub')}
+        teach={{ what: t('platformsWhat'), example: t('platformsEx') }} />
     </Layout>
   )
 }

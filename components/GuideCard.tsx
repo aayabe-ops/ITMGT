@@ -1,12 +1,15 @@
 'use client'
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Lightbulb, ChevronDown, ChevronUp } from 'lucide-react'
 
 // Painel-guia reutilizável ("Como preencher") no topo dos cadastros.
 // Recolhível; lembra o estado por tela via localStorage (best-effort).
-export default function GuideCard({ title = 'Como preencher', steps, note, storageKey }: {
+export default function GuideCard({ title, steps, note, storageKey }: {
   title?: string; steps: string[]; note?: string; storageKey?: string
 }) {
+  const tg = useTranslations('lookup')
+  const heading = title ?? tg('guideTitle')
   const key = storageKey ? `guide:${storageKey}` : ''
   const [open, setOpen] = useState<boolean>(() => {
     if (!key) return true
@@ -20,7 +23,7 @@ export default function GuideCard({ title = 'Como preencher', steps, note, stora
     <div className="mb-5 overflow-hidden rounded-xl border border-navy-100 bg-navy-50/60">
       <button type="button" onClick={toggle} className="flex w-full items-center gap-2 px-4 py-2.5 text-left">
         <Lightbulb className="h-4 w-4 shrink-0 text-bordeaux" />
-        <span className="text-sm font-semibold text-navy-800">{title}</span>
+        <span className="text-sm font-semibold text-navy-800">{heading}</span>
         <span className="ml-auto text-navy-400">{open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</span>
       </button>
       {open && (
