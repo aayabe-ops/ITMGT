@@ -1,4 +1,5 @@
 import { getCurrentUser } from '@/lib/auth'
+import { getTranslations } from 'next-intl/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Layout from '@/components/Layout'
@@ -6,28 +7,22 @@ import { BarChart2, Warehouse, FileSignature, ArrowRight, LineChart, Table2, Wal
 
 type Card = { href: string; title: string; desc: string; icon: any; tag?: string; disabled?: boolean }
 
-export default function ReportHubPage() {
+export default async function ReportHubPage() {
   const user = getCurrentUser()
   if (!user) redirect('/login')
+  const t = await getTranslations('rep')
   const admin = user.role === 'admin' || user.role === 'diretor'
 
   const cards: Card[] = [
-    { href: '/report/analise', icon: BarChart2, title: 'Análise de Budget',
-      desc: 'Gráficos por categoria, Pareto de fornecedores, YoY, OPEX/CAPEX, orçado × realizado e curva S.' },
+    { href: '/report/analise', icon: BarChart2, title: t('cardAnaliseTitle'), desc: t('cardAnaliseDesc') },
     ...(admin ? [
-      { href: '/report/despesa-unidade', icon: Warehouse, title: 'Despesa por Unidade',
-        desc: 'Quanto cada unidade custou de TI — orçado × realizado, separando direto de rateado. Export CSV.' },
-      { href: '/report/contratos', icon: FileSignature, title: 'Vigência de Contratos',
-        desc: 'Contratos vigentes, vencendo e vencidos, com alertas de renovação e export CSV.' },
-      { href: '/report/servicos', icon: Table2, title: 'Contrato × Orçado × Realizado',
-        desc: 'Correlação por serviço (fornecedor + categoria + unidade): contratado, orçado e realizado lado a lado, com desvio. Export CSV.' },
-      { href: '/report/forecast', icon: LineChart, title: 'Forecast FY',
-        desc: 'Projeção de fechamento do ano por unidade: realizado dos meses fechados + budget restante.' },
-      { href: '/report/disponivel', icon: Wallet, title: 'Comprometido / Disponível',
-        desc: 'Orçado − Realizado − Comprometido (contratos dos meses em aberto) = quanto ainda há para gastar.' },
+      { href: '/report/despesa-unidade', icon: Warehouse, title: t('cardDespesaTitle'), desc: t('cardDespesaDesc') },
+      { href: '/report/contratos', icon: FileSignature, title: t('cardContratosTitle'), desc: t('cardContratosDesc') },
+      { href: '/report/servicos', icon: Table2, title: t('cardServicosTitle'), desc: t('cardServicosDesc') },
+      { href: '/report/forecast', icon: LineChart, title: t('cardForecastTitle'), desc: t('cardForecastDesc') },
+      { href: '/report/disponivel', icon: Wallet, title: t('cardDisponivelTitle'), desc: t('cardDisponivelDesc') },
     ] as Card[] : []),
-    { href: '#', icon: Table2, title: 'Detalhe (linha a linha)', tag: 'Em breve', disabled: true,
-      desc: 'Lançamentos de budget e realizado por CC × categoria × fornecedor × mês, com export.' },
+    { href: '#', icon: Table2, title: t('cardDetailTitle'), tag: t('comingSoon'), disabled: true, desc: t('cardDetailDesc') },
   ]
 
   return (
@@ -35,9 +30,9 @@ export default function ReportHubPage() {
       <div className="page">
         <div className="mb-6">
           <h1 className="page-title flex items-center gap-2">
-            <BarChart2 className="w-5 h-5 text-blue-600" /> Relatórios
+            <BarChart2 className="w-5 h-5 text-blue-600" /> {t('back')}
           </h1>
-          <p className="text-sm text-slate-500">Escolha um relatório.</p>
+          <p className="text-sm text-slate-500">{t('hubSubtitle')}</p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -58,7 +53,7 @@ export default function ReportHubPage() {
                 </div>
                 {!c.disabled && (
                   <div className="mt-3 text-sm text-blue-600 font-medium flex items-center gap-1 justify-end">
-                    Abrir <ArrowRight className="w-3.5 h-3.5" />
+                    {t('open')} <ArrowRight className="w-3.5 h-3.5" />
                   </div>
                 )}
               </>

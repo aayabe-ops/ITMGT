@@ -1,5 +1,6 @@
 'use client'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
 import { LineChart, Download, AlertTriangle, RefreshCw, ArrowLeft, Wallet, TrendingUp, Scale } from 'lucide-react'
 import { csvDownload } from '@/lib/csv'
@@ -7,9 +8,14 @@ import { yearOptions, DEFAULT_YEAR } from '@/lib/years'
 import { StatHeroRow, signVariant } from '@/components/StatHero'
 
 type Row = { id: string; code: string; name: string; orcado_fy: number; realizado: number; budget_restante: number }
-const MESES = ['—', 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 
 export default function ForecastClient() {
+  const t = useTranslations('rep')
+  const tc = useTranslations('common')
+  const locale = useLocale()
+  const mLoc = locale === 'pt' ? 'pt-BR' : locale
+  const monthName = (i: number) => i >= 1 && i <= 12 ? new Intl.DateTimeFormat(mLoc, { month: 'short' }).format(new Date(2021, i - 1, 1)).replace('.', '') : '—'
+
   const [year, setYear] = useState(DEFAULT_YEAR)
   const [usd, setUsd] = useState(false)
   const [rows, setRows] = useState<Row[]>([])
@@ -26,7 +32,7 @@ export default function ForecastClient() {
       const p = new URLSearchParams({ year: String(year) }); if (usd) p.set('usd', '1')
       const r = await fetch(`/api/report/forecast?${p}`); const d = await r.json()
       if (d?.error) setErr(d.error); else { setRows(Array.isArray(d.rows) ? d.rows : []); setCutoff(d.cutoff || 0) }
-    } catch (e: any) { setErr(e?.message || 'Erro ao carregar.') }
+    } catch (e: any) { setErr(e?.message || t('loadError')) }
     setLoading(false)
   }, [year, usd])
   useEffect(() => { load() }, [load])
@@ -53,47 +59,47 @@ export default function ForecastClient() {
     <div className="page">
       <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
         <div>
-          <Link href="/report" className="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1 mb-1"><ArrowLeft className="w-3 h-3" /> Relatórios</Link>
-          <h1 className="page-title flex items-center gap-2"><LineChart className="w-5 h-5 text-blue-600" /> Forecast FY</h1>
-          <p className="text-sm text-slate-500 max-w-2xl">Reprojeção do ano = <b>Realizado</b> dos meses fechados <b>+ Budget</b> dos meses em aberto. Corte no mês <b>{MESES[cutoff] || '—'}</b> (realizado até ele, budget depois).</p>
+          <Link href="/report" className="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1 mb-1"><ArrowLeft className="w-3 h-3" /> {t('back')}</Link>
+          <h1 className="page-title flex items-center gap-2"><LineChart className="w-5 h-5 text-blue-600" /> {t('forecastTitle')}</h1>
+          <p className="text-sm text-slate-500 max-w-2xl">{t('forecastSubtitle', { m: monthName(cutoff) })}</p>
         </div>
         <div className="flex items-end gap-2 flex-wrap">
-          <div><label className="label">Ano</label>
+          <div><label className="label">{t('year')}</label>
             <select className="input w-24 text-sm" value={year} onChange={e => setYear(+e.target.value)}>{yearOptions().map(y => <option key={y} value={y}>{y}</option>)}</select>
           </div>
-          <div><label className="label">Moeda</label>
+          <div><label className="label">{t('currency')}</label>
             <div className="flex rounded-lg border border-slate-200 overflow-hidden text-xs h-9">
               <button type="button" onClick={() => setUsd(false)} className={`px-3 font-medium ${!usd ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-50'}`}>BRL</button>
               <button type="button" onClick={() => setUsd(true)} className={`px-3 font-medium border-l border-slate-200 ${usd ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-50'}`}>USD</button>
             </div>
           </div>
-          <button onClick={load} className="btn-secondary text-sm flex items-center gap-1.5"><RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Atualizar</button>
-          <button onClick={exportCSV} disabled={!data.length} className="btn-secondary text-sm flex items-center gap-1.5"><Download className="w-4 h-4" /> CSV</button>
+          <button onClick={load} className="btn-secondary text-sm flex items-center gap-1.5"><RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> {t('refresh')}</button>
+          <button onClick={exportCSV} disabled={!data.length} className="btn-secondary text-sm flex items-center gap-1.5"><Download className="w-4 h-4" /> {t('csv')}</button>
         </div>
       </div>
 
       {err && <div className="mb-4 flex items-center gap-2 px-4 py-2 rounded-lg text-sm bg-red-50 text-red-700"><AlertTriangle className="w-4 h-4" /> {err}</div>}
 
       <StatHeroRow className="mb-5" tiles={[
-        { label: 'Orçado FY', value: money(tot.orcado_fy), variant: 'navy', Icon: Wallet },
-        { label: 'Realizado (fechado)', value: money(tot.realizado), variant: 'teal', Icon: TrendingUp },
-        { label: 'Forecast FY', value: money(tot.forecast), variant: 'blue', Icon: LineChart },
-        { label: 'Desvio vs Orçado', value: (tot.desvio >= 0 ? '+' : '') + money(tot.desvio), variant: signVariant(tot.desvio > 0), Icon: Scale },
+        { label: t('orcadoFy'), value: money(tot.orcado_fy), variant: 'navy', Icon: Wallet },
+        { label: t('statRealizadoFechado'), value: money(tot.realizado), variant: 'teal', Icon: TrendingUp },
+        { label: t('forecastFy'), value: money(tot.forecast), variant: 'blue', Icon: LineChart },
+        { label: t('statDesvioVsOrcado'), value: (tot.desvio >= 0 ? '+' : '') + money(tot.desvio), variant: signVariant(tot.desvio > 0), Icon: Scale },
       ]} />
 
       <div className="card overflow-hidden rounded-2xl shadow-sm">
         <div className="overflow-x-auto">
           <table className="tbl w-full text-sm [&_td]:px-4 [&_td]:py-2.5">
             <thead><tr>
-              <th className="text-left">Unidade</th>
-              <th className="text-right">Orçado FY</th>
-              <th className="text-right">Realizado</th>
-              <th className="text-right">Budget restante</th>
-              <th className="text-right">Forecast FY</th>
-              <th className="text-right">Desvio</th>
+              <th className="text-left">{t('unidade')}</th>
+              <th className="text-right">{t('orcadoFy')}</th>
+              <th className="text-right">{t('realizado')}</th>
+              <th className="text-right">{t('budgetRestante')}</th>
+              <th className="text-right">{t('forecastFy')}</th>
+              <th className="text-right">{t('desvio')}</th>
             </tr></thead>
             <tbody>
-              {!loading && data.length === 0 && <tr><td colSpan={6} className="px-3 py-10 text-center text-slate-400">Sem dados.</td></tr>}
+              {!loading && data.length === 0 && <tr><td colSpan={6} className="px-3 py-10 text-center text-slate-400">{t('noData')}</td></tr>}
               {data.map(r => (
                 <tr key={r.id}>
                   <td><span className="font-mono text-xs text-slate-500">{r.code}</span> — {r.name}</td>
@@ -107,7 +113,7 @@ export default function ForecastClient() {
             </tbody>
             {data.length > 0 && (
               <tfoot><tr className="bg-slate-50 font-semibold text-slate-800">
-                <td className="px-4 py-2.5 text-xs uppercase">Total</td>
+                <td className="px-4 py-2.5 text-xs uppercase">{t('total')}</td>
                 <td className="text-right font-mono tabular-nums">{money(tot.orcado_fy)}</td>
                 <td className="text-right font-mono tabular-nums">{money(tot.realizado)}</td>
                 <td className="text-right font-mono tabular-nums">{money(tot.budget_restante)}</td>
@@ -118,7 +124,7 @@ export default function ForecastClient() {
           </table>
         </div>
       </div>
-      {loading && <div className="text-sm text-slate-400 py-8 text-center">Carregando…</div>}
+      {loading && <div className="text-sm text-slate-400 py-8 text-center">{tc('loading')}</div>}
     </div>
   )
 }
