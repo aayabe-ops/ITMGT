@@ -1,8 +1,10 @@
 'use client'
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { ShieldCheck, ArrowRight, Lock, Mail, Snowflake, LifeBuoy } from 'lucide-react'
 
 export default function LoginPage() {
+  const t = useTranslations('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -17,7 +19,7 @@ export default function LoginPage() {
       body: JSON.stringify({ email, password }),
     })
     const data = await res.json()
-    if (!res.ok) { setError(data.error || 'Erro ao entrar'); setLoading(false) }
+    if (!res.ok) { setError(data.error || t('error')); setLoading(false) }
     // Recarga total (não router.push) para limpar o Router Cache do Next e não
     // herdar o menu/estado renderizado para outro usuário na mesma aba.
     else window.location.href = '/'
@@ -37,21 +39,19 @@ export default function LoginPage() {
             <span className="text-sm font-semibold text-navy-800">IT Cost Manager</span>
           </div>
 
-          <h1 className="mt-8 text-2xl font-semibold text-navy-800">Bem-vindo de volta</h1>
-          <p className="mt-2 mb-7 text-sm leading-relaxed text-slate-500">
-            Acesse o painel com suas credenciais corporativas.
-          </p>
+          <h1 className="mt-8 text-2xl font-semibold text-navy-800">{t('welcome')}</h1>
+          <p className="mt-2 mb-7 text-sm leading-relaxed text-slate-500">{t('subtitle')}</p>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="label">E-mail</label>
+              <label className="label">{t('email')}</label>
               <div className="relative">
                 <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input type="email" className="input pl-10" value={email} onChange={e => setEmail(e.target.value)} required autoFocus placeholder="voce@emergentcold.com" />
               </div>
             </div>
             <div>
-              <label className="label">Senha</label>
+              <label className="label">{t('password')}</label>
               <div className="relative">
                 <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input type="password" className="input pl-10" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••••" />
@@ -61,22 +61,20 @@ export default function LoginPage() {
               <p className="rounded-lg border border-bordeaux-100 bg-bordeaux-50 px-3 py-2 text-xs text-bordeaux-700">{error}</p>
             )}
             <button type="submit" disabled={loading} className="btn-navy w-full justify-center py-3">
-              {loading ? 'Entrando…' : <>Acessar painel <ArrowRight className="h-4 w-4" /></>}
+              {loading ? t('submitting') : <>{t('submit')} <ArrowRight className="h-4 w-4" /></>}
             </button>
           </form>
 
           <div className="mt-7 flex items-start gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
             <LifeBuoy className="mt-0.5 h-4 w-4 shrink-0 text-navy-600" />
             <div>
-              <p className="text-xs font-semibold text-navy-800">Esqueceu a senha ou não tem acesso?</p>
-              <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">
-                O acesso é liberado pelo administrador. Fale com o Suporte de TI para criar ou redefinir sua senha.
-              </p>
+              <p className="text-xs font-semibold text-navy-800">{t('helpTitle')}</p>
+              <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">{t('helpBody')}</p>
             </div>
           </div>
 
           <p className="mt-auto flex items-center justify-center gap-1.5 pt-8 text-center text-xs text-slate-400">
-            <Lock className="h-3 w-3" /> Sessão protegida · © {new Date().getFullYear()} Emergent Cold LatAm
+            <Lock className="h-3 w-3" /> {t('session')} · © {new Date().getFullYear()} Emergent Cold LatAm
           </p>
         </div>
 
@@ -92,14 +90,12 @@ export default function LoginPage() {
           </div>
 
           <div className="relative max-w-sm">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">Acesso seguro às operações</p>
-            <h2 className="mt-4 text-[1.7rem] font-semibold leading-tight">
-              Gestão de custos de TI, governada por papel e escopo.
-            </h2>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">{t('tagline')}</p>
+            <h2 className="mt-4 text-[1.7rem] font-semibold leading-tight">{t('headline')}</h2>
             <div className="mt-8 space-y-3">
-              <Feature label="OPEX/CAPEX" text="Budget, Realizado e Forecast" />
-              <Feature label="Escopo" text="País, unidade, fornecedor e contrato" />
-              <Feature label="Rateio" text="Distribuição por driver e memória de cálculo" />
+              <Feature label="OPEX/CAPEX" text={t('featBudget')} />
+              <Feature label={t('featScopeLabel')} text={t('featScope')} />
+              <Feature label="Rateio" text={t('featRateio')} />
             </div>
           </div>
 

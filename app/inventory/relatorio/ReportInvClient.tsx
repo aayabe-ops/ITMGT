@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useMemo, useState, Fragment } from 'react'
 import dynamic from 'next/dynamic'
+import { useTranslations } from 'next-intl'
 import { BarChart3, ChevronRight, ChevronDown, Wallet, HardDrive, KeyRound } from 'lucide-react'
 
 const ReactECharts = dynamic(() => import('echarts-for-react'), { ssr: false })
@@ -10,7 +11,7 @@ interface AssetRow { unidade_id: string; unidade_name: string; group_name: strin
 interface LicRow { unidade_id: string; unidade_name: string; group_name: string; licenses: number; seats: number; seats_used: number }
 interface Data { year: number; base: string; fin: FinRow[]; assets: AssetRow[]; lics: LicRow[] }
 
-// Naturezas (destino do custo) na ordem e cor do relatório
+// Naturezas (destino do custo) — termos de domínio, mantidos no original
 const NATURES = [
   { key: 'COGS', label: 'COGS', color: '#1d9e75' },
   { key: 'G&A', label: 'G&A', color: '#378add' },
@@ -22,12 +23,15 @@ const usd = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', c
 interface URow {
   id: string; name: string
   natures: Record<string, number>; finTotal: number
-  cats: Record<string, Record<string, number>>   // nature -> { category -> value }
+  cats: Record<string, Record<string, number>>
   assets: Record<string, number>; assetsTotal: number
   lics: Record<string, { licenses: number; seats: number; seats_used: number }>; licsTotal: number
 }
 
 export default function ReportInvClient({ defaultYear }: { defaultYear: number }) {
+  const t = useTranslations('inventory.report')
+  const ti = useTranslations('inventory')
+  const tcom = useTranslations('common')
   const [year, setYear] = useState(defaultYear)
   const [base, setBase] = useState<'budget' | 'actual'>('budget')
   const [data, setData] = useState<Data | null>(null)
@@ -61,7 +65,6 @@ export default function ReportInvClient({ defaultYear }: { defaultYear: number }
     return [...m.values()].sort((a, b) => b.finTotal - a.finTotal || b.assetsTotal - a.assetsTotal || a.name.localeCompare(b.name))
   }, [data])
 
-  // Consolidado
   const totFin = useMemo(() => {
     const t: Record<string, number> = {}; let all = 0
     for (const u of units) for (const n of NATURES) { t[n.key] = (t[n.key] || 0) + (u.natures[n.key] || 0); all += (u.natures[n.key] || 0) }
@@ -93,6 +96,7 @@ export default function ReportInvClient({ defaultYear }: { defaultYear: number }
 
   const toggle = (id: string) => setOpen(o => ({ ...o, [id]: !o[id] }))
   const years = [defaultYear + 1, defaultYear, defaultYear - 1, defaultYear - 2]
+  const baseLabel = base === 'budget' ? t('baseBudget') : t('baseActual')
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto">
@@ -100,22 +104,22 @@ export default function ReportInvClient({ defaultYear }: { defaultYear: number }
         <div className="flex items-center gap-2.5">
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-navy-50 text-navy-700"><BarChart3 className="h-5 w-5" /></span>
           <div>
-            <h1 className="text-xl font-semibold text-navy-800">Relatório por Unidade</h1>
-            <p className="text-sm text-slate-500">Financeiro (COGS / G&amp;A / Holding) com drill-down, e inventário de TI por grupo. Valores em USD.</p>
+            <h1 className="text-xl font-semibold text-navy-800">{t('title')}</h1>
+            <p className="text-sm text-slate-500">{t('subtitle')}</p>
           </div>
         </div>
         <div className="flex items-end gap-3">
           <div>
-            <label className="label">Ano</label>
+            <label className="label">{t('year')}</label>
             <select className="input" value={year} onChange={e => setYear(parseInt(e.target.value))}>
               {years.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
           <div>
-            <label className="label">Base</label>
+            <label className="label">{t('base')}</label>
             <select className="input" value={base} onChange={e => setBase(e.target.value as any)}>
-              <option value="budget">Orçamento</option>
-              <option value="actual">Realizado</option>
+              <option value="budget">{t('baseBudget')}</option>
+              <option value="actual">{t('baseActual')}</option>
             </select>
           </div>
         </div>
@@ -123,25 +127,25 @@ export default function ReportInvClient({ defaultYear }: { defaultYear: number }
 
       {/* KPIs */}
       <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Kpi icon={<Wallet className="h-4 w-4" />} label="Financeiro total" value={usd(totFin.all)} />
+        <Kpi icon={<Wallet className="h-4 w-4" />} label={t('kpiFin')} value={usd(totFin.all)} />
         <Kpi icon={<span className="h-2.5 w-2.5 rounded-full" style={{ background: '#1d9e75' }} />} label="COGS" value={usd(totFin.t['COGS'] || 0)} />
-        <Kpi icon={<HardDrive className="h-4 w-4" />} label="Ativos (hardware)" value={String(assetsAll)} />
-        <Kpi icon={<KeyRound className="h-4 w-4" />} label="Licenças" value={String(licsAll)} />
+        <Kpi icon={<HardDrive className="h-4 w-4" />} label={t('kpiAssets')} value={String(assetsAll)} />
+        <Kpi icon={<KeyRound className="h-4 w-4" />} label={t('kpiLicenses')} value={String(licsAll)} />
       </div>
 
       {loading ? (
-        <p className="mt-8 text-center text-slate-400">Carregando…</p>
+        <p className="mt-8 text-center text-slate-400">{tcom('loading')}</p>
       ) : !units.length ? (
-        <p className="mt-8 text-center text-slate-400">Sem dados para {year} ({base === 'budget' ? 'Orçamento' : 'Realizado'}).</p>
+        <p className="mt-8 text-center text-slate-400">{t('empty', { year: String(year), base: baseLabel })}</p>
       ) : (
         <>
           {/* Consolidado */}
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card title="Financeiro por natureza" sub="consolidado, USD">
-              {totFin.all ? <ReactECharts option={natureDonut} style={{ height: 260 }} notMerge lazyUpdate /> : <Empty />}
+            <Card title={t('finByNature')} sub={t('consolidatedUsd')}>
+              {totFin.all ? <ReactECharts option={natureDonut} style={{ height: 260 }} notMerge lazyUpdate /> : <Empty label={t('noData')} />}
             </Card>
-            <Card title="Ativos por grupo" sub="consolidado">
-              {Object.keys(totGroups).length ? <ReactECharts option={groupBar} style={{ height: 260 }} notMerge lazyUpdate /> : <Empty />}
+            <Card title={t('assetsByGroup')} sub={t('consolidated')}>
+              {Object.keys(totGroups).length ? <ReactECharts option={groupBar} style={{ height: 260 }} notMerge lazyUpdate /> : <Empty label={t('noData')} />}
             </Card>
           </div>
 
@@ -150,13 +154,13 @@ export default function ReportInvClient({ defaultYear }: { defaultYear: number }
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500">
-                  <th className="px-4 py-3">Unidade</th>
-                  <th className="px-4 py-3 text-right">Financeiro</th>
+                  <th className="px-4 py-3">{ti('unidade')}</th>
+                  <th className="px-4 py-3 text-right">{t('colFin')}</th>
                   <th className="px-4 py-3 text-right">COGS</th>
                   <th className="px-4 py-3 text-right">G&amp;A</th>
                   <th className="px-4 py-3 text-right">Holding</th>
-                  <th className="px-4 py-3 text-right">Ativos</th>
-                  <th className="px-4 py-3 text-right">Licenças</th>
+                  <th className="px-4 py-3 text-right">{t('colAssets')}</th>
+                  <th className="px-4 py-3 text-right">{t('colLicenses')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -177,12 +181,11 @@ export default function ReportInvClient({ defaultYear }: { defaultYear: number }
                       <td className="px-4 py-3 text-right text-slate-600">{u.licsTotal || '—'}</td>
                     </tr>
                     {open[u.id] && (
-                      <tr key={u.id + '-d'} className="bg-slate-50/40">
+                      <tr className="bg-slate-50/40">
                         <td colSpan={7} className="px-4 py-4">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            {/* Financeiro: natureza -> composição por categoria */}
                             <div>
-                              <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Financeiro — composição</h4>
+                              <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">{t('finComposition')}</h4>
                               {NATURES.filter(n => u.natures[n.key]).length ? NATURES.filter(n => u.natures[n.key]).map(n => (
                                 <div key={n.key} className="mb-3">
                                   <div className="flex items-center justify-between text-sm">
@@ -197,11 +200,10 @@ export default function ReportInvClient({ defaultYear }: { defaultYear: number }
                                     ))}
                                   </div>
                                 </div>
-                              )) : <p className="text-xs text-slate-400">Sem financeiro neste ano/base.</p>}
+                              )) : <p className="text-xs text-slate-400">{t('noFin')}</p>}
                             </div>
-                            {/* Inventário: por grupo */}
                             <div>
-                              <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Inventário — por grupo</h4>
+                              <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">{t('invByGroup')}</h4>
                               {u.assetsTotal ? (
                                 <div className="space-y-1">
                                   {Object.entries(u.assets).sort((a, b) => b[1] - a[1]).map(([g, c]) => (
@@ -211,13 +213,13 @@ export default function ReportInvClient({ defaultYear }: { defaultYear: number }
                                     </div>
                                   ))}
                                 </div>
-                              ) : <p className="text-xs text-slate-400">Nenhum ativo cadastrado.</p>}
+                              ) : <p className="text-xs text-slate-400">{ti('assets.empty')}</p>}
                               {!!u.licsTotal && (
                                 <div className="mt-3 space-y-1">
                                   {Object.entries(u.lics).map(([g, s]) => (
                                     <div key={g} className="flex items-center justify-between text-sm">
                                       <span className="inline-flex items-center gap-1.5 text-slate-700"><KeyRound className="h-3.5 w-3.5 text-slate-400" />{g}</span>
-                                      <span className="text-slate-600">{s.licenses} licença(s){s.seats ? ` · ${s.seats_used}/${s.seats} assentos` : ''}</span>
+                                      <span className="text-slate-600">{s.licenses} {t('licUnit')}{s.seats ? ` · ${s.seats_used}/${s.seats} ${t('seatsWord')}` : ''}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -232,7 +234,7 @@ export default function ReportInvClient({ defaultYear }: { defaultYear: number }
               </tbody>
             </table>
           </div>
-          <p className="mt-2 text-xs text-slate-400">{units.length} unidade(s) · clique numa linha para abrir a composição</p>
+          <p className="mt-2 text-xs text-slate-400">{units.length} {t('footer')}</p>
         </>
       )}
     </div>
@@ -258,4 +260,4 @@ function Card({ title, sub, children }: { title: string; sub?: string; children:
     </div>
   )
 }
-function Empty() { return <p className="py-12 text-center text-sm text-slate-400">Sem dados.</p> }
+function Empty({ label }: { label: string }) { return <p className="py-12 text-center text-sm text-slate-400">{label}</p> }

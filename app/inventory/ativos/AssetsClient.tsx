@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Plus, Pencil, Trash2, Search, X, HardDrive } from 'lucide-react'
 
 interface Group { id: string; code: string; name: string }
@@ -11,13 +12,13 @@ interface Asset {
   group_name: string; unidade_code: string; unidade_name: string; country_name: string | null; platform_name: string | null
 }
 
-const STATUS: { v: string; label: string; cls: string }[] = [
-  { v: 'EM_USO', label: 'Em uso', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  { v: 'ESTOQUE', label: 'Estoque', cls: 'bg-slate-100 text-slate-600 border-slate-200' },
-  { v: 'MANUTENCAO', label: 'Manutenção', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
-  { v: 'BAIXADO', label: 'Baixado', cls: 'bg-rose-50 text-rose-700 border-rose-200' },
+const STATUS: { v: string; cls: string }[] = [
+  { v: 'EM_USO', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  { v: 'ESTOQUE', cls: 'bg-slate-100 text-slate-600 border-slate-200' },
+  { v: 'MANUTENCAO', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
+  { v: 'BAIXADO', cls: 'bg-rose-50 text-rose-700 border-rose-200' },
 ]
-const statusMeta = (v: string) => STATUS.find(s => s.v === v) || STATUS[0]
+const statusCls = (v: string) => (STATUS.find(s => s.v === v) || STATUS[0]).cls
 
 const empty = {
   id: '', asset_group_id: '', unidade_id: '', name: '', subtype: '', manufacturer: '', model: '',
@@ -25,6 +26,8 @@ const empty = {
 }
 
 export default function AssetsClient({ groups, unidades }: { groups: Group[]; unidades: Unidade[] }) {
+  const t = useTranslations('inventory')
+  const tc = useTranslations('common')
   const [rows, setRows] = useState<Asset[]>([])
   const [loading, setLoading] = useState(true)
   const [fGroup, setFGroup] = useState('')
@@ -67,7 +70,7 @@ export default function AssetsClient({ groups, unidades }: { groups: Group[]; un
 
   async function save(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.asset_group_id || !form.unidade_id) { setError('Grupo e unidade são obrigatórios.'); return }
+    if (!form.asset_group_id || !form.unidade_id) { setError(t('assets.req')); return }
     setSaving(true); setError('')
     const method = form.id ? 'PATCH' : 'POST'
     const res = await fetch('/api/inventory/assets', {
@@ -75,16 +78,16 @@ export default function AssetsClient({ groups, unidades }: { groups: Group[]; un
     })
     const data = await res.json().catch(() => ({}))
     setSaving(false)
-    if (!res.ok) { setError(data.error || 'Erro ao salvar.'); return }
+    if (!res.ok) { setError(data.error || tc('saveError')); return }
     close(); load()
   }
 
   async function remove(a: Asset) {
-    if (!confirm(`Excluir o ativo ${a.asset_tag || a.model || a.serial_number || ''}?`)) return
+    if (!confirm(`${t('assets.confirmDelete')} ${a.asset_tag || a.model || a.serial_number || ''}?`)) return
     const res = await fetch('/api/inventory/assets', {
       method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: a.id }),
     })
-    if (res.ok) load(); else { const d = await res.json().catch(() => ({})); alert(d.error || 'Erro ao excluir.') }
+    if (res.ok) load(); else { const d = await res.json().catch(() => ({})); alert(d.error || tc('deleteError')) }
   }
 
   return (
@@ -93,34 +96,34 @@ export default function AssetsClient({ groups, unidades }: { groups: Group[]; un
         <div className="flex items-center gap-2.5">
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-navy-50 text-navy-700"><HardDrive className="h-5 w-5" /></span>
           <div>
-            <h1 className="text-xl font-semibold text-navy-800">Inventário — Ativos (Hardware)</h1>
-            <p className="text-sm text-slate-500">Servidores, estações, rede, dispositivos móveis e periféricos por unidade.</p>
+            <h1 className="text-xl font-semibold text-navy-800">{t('assets.title')}</h1>
+            <p className="text-sm text-slate-500">{t('assets.subtitle')}</p>
           </div>
         </div>
-        <button onClick={openNew} className="btn-navy"><Plus className="h-4 w-4" /> Adicionar ativo</button>
+        <button onClick={openNew} className="btn-navy"><Plus className="h-4 w-4" /> {t('assets.add')}</button>
       </div>
 
       {/* Filtros */}
       <div className="mt-5 flex flex-wrap items-end gap-3">
         <div>
-          <label className="label">Grupo</label>
+          <label className="label">{t('group')}</label>
           <select className="input min-w-[180px]" value={fGroup} onChange={e => setFGroup(e.target.value)}>
-            <option value="">Todos</option>
+            <option value="">{t('allM')}</option>
             {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
           </select>
         </div>
         <div>
-          <label className="label">Unidade</label>
+          <label className="label">{t('unidade')}</label>
           <select className="input min-w-[180px]" value={fUnidade} onChange={e => setFUnidade(e.target.value)}>
-            <option value="">Todas</option>
+            <option value="">{t('allF')}</option>
             {unidades.map(u => <option key={u.id} value={u.id}>{u.code} — {u.name}</option>)}
           </select>
         </div>
         <div className="flex-1 min-w-[200px]">
-          <label className="label">Busca</label>
+          <label className="label">{tc('search')}</label>
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input className="input pl-10" placeholder="Patrimônio, série, modelo…" value={q} onChange={e => setQ(e.target.value)} />
+            <input className="input pl-10" placeholder={t('assets.searchPh')} value={q} onChange={e => setQ(e.target.value)} />
           </div>
         </div>
       </div>
@@ -129,66 +132,66 @@ export default function AssetsClient({ groups, unidades }: { groups: Group[]; un
       {editing && (
         <form onSubmit={save} className="mt-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-navy-800">{form.id ? 'Editar ativo' : 'Novo ativo'}</h2>
+            <h2 className="text-sm font-semibold text-navy-800">{form.id ? t('assets.editItem') : t('assets.new')}</h2>
             <button type="button" onClick={close} className="text-slate-400 hover:text-slate-600"><X className="h-5 w-5" /></button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="label">Grupo *</label>
+              <label className="label">{t('group')} *</label>
               <select className="input" value={form.asset_group_id} onChange={e => set('asset_group_id', e.target.value)} required>
                 {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="label">Unidade *</label>
+              <label className="label">{t('unidade')} *</label>
               <select className="input" value={form.unidade_id} onChange={e => set('unidade_id', e.target.value)} required>
-                <option value="">Selecione…</option>
+                <option value="">{t('selectPh')}</option>
                 {unidades.map(u => <option key={u.id} value={u.id}>{u.code} — {u.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="label">Status</label>
+              <label className="label">{tc('status')}</label>
               <select className="input" value={form.status} onChange={e => set('status', e.target.value)}>
-                {STATUS.map(s => <option key={s.v} value={s.v}>{s.label}</option>)}
+                {STATUS.map(s => <option key={s.v} value={s.v}>{t(`status.${s.v}`)}</option>)}
               </select>
             </div>
             <div>
-              <label className="label">Tipo / subclasse</label>
-              <input className="input" placeholder="Desktop, Notebook, Switch…" value={form.subtype} onChange={e => set('subtype', e.target.value)} />
+              <label className="label">{t('assets.subtype')}</label>
+              <input className="input" placeholder={t('assets.subtypePh')} value={form.subtype} onChange={e => set('subtype', e.target.value)} />
             </div>
             <div>
-              <label className="label">Fabricante</label>
-              <input className="input" placeholder="Dell, HP, Cisco…" value={form.manufacturer} onChange={e => set('manufacturer', e.target.value)} />
+              <label className="label">{t('assets.manufacturer')}</label>
+              <input className="input" placeholder={t('assets.manufacturerPh')} value={form.manufacturer} onChange={e => set('manufacturer', e.target.value)} />
             </div>
             <div>
-              <label className="label">Modelo</label>
+              <label className="label">{t('assets.model')}</label>
               <input className="input" value={form.model} onChange={e => set('model', e.target.value)} />
             </div>
             <div>
-              <label className="label">Número de série</label>
+              <label className="label">{t('assets.serial')}</label>
               <input className="input" value={form.serial_number} onChange={e => set('serial_number', e.target.value)} />
             </div>
             <div>
-              <label className="label">Patrimônio</label>
+              <label className="label">{t('assets.assetTag')}</label>
               <input className="input" value={form.asset_tag} onChange={e => set('asset_tag', e.target.value)} />
             </div>
             <div>
-              <label className="label">Sistema operacional</label>
-              <input className="input" placeholder="Windows Server 2022…" value={form.os} onChange={e => set('os', e.target.value)} />
+              <label className="label">{t('assets.os')}</label>
+              <input className="input" placeholder={t('assets.osPh')} value={form.os} onChange={e => set('os', e.target.value)} />
             </div>
             <div className="md:col-span-2">
-              <label className="label">Descrição / hostname</label>
+              <label className="label">{t('assets.descr')}</label>
               <input className="input" value={form.name} onChange={e => set('name', e.target.value)} />
             </div>
             <div className="md:col-span-3">
-              <label className="label">Observações</label>
+              <label className="label">{t('assets.notes')}</label>
               <input className="input" value={form.notes} onChange={e => set('notes', e.target.value)} />
             </div>
           </div>
           {error && <p className="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{error}</p>}
           <div className="mt-5 flex gap-2">
-            <button type="submit" disabled={saving} className="btn-navy">{saving ? 'Salvando…' : 'Salvar'}</button>
-            <button type="button" onClick={close} className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Cancelar</button>
+            <button type="submit" disabled={saving} className="btn-navy">{saving ? tc('save') + '…' : tc('save')}</button>
+            <button type="button" onClick={close} className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">{tc('cancel')}</button>
           </div>
         </form>
       )}
@@ -198,43 +201,40 @@ export default function AssetsClient({ groups, unidades }: { groups: Group[]; un
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500">
-              <th className="px-4 py-3">Patrimônio</th>
-              <th className="px-4 py-3">Grupo</th>
-              <th className="px-4 py-3">Descrição / Modelo</th>
-              <th className="px-4 py-3">Nº série</th>
-              <th className="px-4 py-3">Unidade</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Ações</th>
+              <th className="px-4 py-3">{t('assets.assetTag')}</th>
+              <th className="px-4 py-3">{t('group')}</th>
+              <th className="px-4 py-3">{t('assets.colDescrModel')}</th>
+              <th className="px-4 py-3">{t('assets.colSerial')}</th>
+              <th className="px-4 py-3">{t('unidade')}</th>
+              <th className="px-4 py-3">{tc('status')}</th>
+              <th className="px-4 py-3 text-right">{tc('actions')}</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">Carregando…</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">{tc('loading')}</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">Nenhum ativo cadastrado.</td></tr>
-            ) : filtered.map(a => {
-              const st = statusMeta(a.status)
-              return (
-                <tr key={a.id} className="border-b border-slate-50 hover:bg-slate-50/60">
-                  <td className="px-4 py-3 font-medium text-navy-800">{a.asset_tag || '—'}</td>
-                  <td className="px-4 py-3 text-slate-600">{a.group_name}</td>
-                  <td className="px-4 py-3 text-slate-700">{[a.manufacturer, a.model].filter(Boolean).join(' ') || a.name || '—'}</td>
-                  <td className="px-4 py-3 text-slate-500">{a.serial_number || '—'}</td>
-                  <td className="px-4 py-3 text-slate-600">{a.unidade_code}</td>
-                  <td className="px-4 py-3"><span className={'inline-block rounded-full border px-2 py-0.5 text-xs ' + st.cls}>{st.label}</span></td>
-                  <td className="px-4 py-3">
-                    <div className="flex justify-end gap-1">
-                      <button onClick={() => openEdit(a)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-navy-700" title="Editar"><Pencil className="h-4 w-4" /></button>
-                      <button onClick={() => remove(a)} className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600" title="Excluir"><Trash2 className="h-4 w-4" /></button>
-                    </div>
-                  </td>
-                </tr>
-              )
-            })}
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">{t('assets.empty')}</td></tr>
+            ) : filtered.map(a => (
+              <tr key={a.id} className="border-b border-slate-50 hover:bg-slate-50/60">
+                <td className="px-4 py-3 font-medium text-navy-800">{a.asset_tag || '—'}</td>
+                <td className="px-4 py-3 text-slate-600">{a.group_name}</td>
+                <td className="px-4 py-3 text-slate-700">{[a.manufacturer, a.model].filter(Boolean).join(' ') || a.name || '—'}</td>
+                <td className="px-4 py-3 text-slate-500">{a.serial_number || '—'}</td>
+                <td className="px-4 py-3 text-slate-600">{a.unidade_code}</td>
+                <td className="px-4 py-3"><span className={'inline-block rounded-full border px-2 py-0.5 text-xs ' + statusCls(a.status)}>{t(`status.${a.status}`)}</span></td>
+                <td className="px-4 py-3">
+                  <div className="flex justify-end gap-1">
+                    <button onClick={() => openEdit(a)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-navy-700" title={tc('edit')}><Pencil className="h-4 w-4" /></button>
+                    <button onClick={() => remove(a)} className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600" title={tc('delete')}><Trash2 className="h-4 w-4" /></button>
+                  </div>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
-      <p className="mt-2 text-xs text-slate-400">{filtered.length} ativo(s)</p>
+      <p className="mt-2 text-xs text-slate-400">{filtered.length} {t('assets.count')}</p>
     </div>
   )
 }
