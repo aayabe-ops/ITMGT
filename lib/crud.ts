@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
+import { audit } from '@/lib/audit'
 import pool from '@/lib/db'
 
 const noauth = () => NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
@@ -36,6 +37,7 @@ export function lookupRoutes(table: string, hasDescription = false, extraCols: s
     const ph = fields.map((_, i) => `$${i + 1}`).join(',')
     try {
       const { rows } = await pool.query(`INSERT INTO public.${table}(${fields.join(',')}) VALUES(${ph}) RETURNING ${cols}`, vals)
+      await audit({ user_id: u.id, user_email: u.email, action: 'CREATE', entity: table, entity_id: rows[0].id, detail: `${b.code} — ${b.name}` })
       return NextResponse.json(rows[0])
     } catch (e: any) {
       return NextResponse.json({ error: e?.code === '23505' ? 'Código já existe.' : 'Erro ao inserir.' }, { status: 400 })
@@ -54,6 +56,7 @@ export function lookupRoutes(table: string, hasDescription = false, extraCols: s
     vals.push(b.id)
     try {
       await pool.query(`UPDATE public.${table} SET ${sets.join(',')} WHERE id=$${i}`, vals)
+      await audit({ user_id: u.id, user_email: u.email, action: 'UPDATE', entity: table, entity_id: b.id, detail: b.name || b.code || null })
       return NextResponse.json({ ok: true })
     } catch (e: any) {
       return NextResponse.json({ error: e?.code === '23505' ? 'Código já existe.' : 'Erro ao atualizar.' }, { status: 400 })
@@ -66,10 +69,12 @@ export function lookupRoutes(table: string, hasDescription = false, extraCols: s
     if (!b?.id) return NextResponse.json({ error: 'id obrigatório' }, { status: 400 })
     try {
       await pool.query(`DELETE FROM public.${table} WHERE id=$1`, [b.id])
+      await audit({ user_id: u.id, user_email: u.email, action: 'DELETE', entity: table, entity_id: b.id })
       return NextResponse.json({ ok: true })
     } catch (e: any) {
       if (e?.code === '23503') { // em uso por FK → desativa
         await pool.query(`UPDATE public.${table} SET is_active=false WHERE id=$1`, [b.id])
+        await audit({ user_id: u.id, user_email: u.email, action: 'UPDATE', entity: table, entity_id: b.id, detail: 'desativado (em uso)' })
         return NextResponse.json({ ok: true, deactivated: true }, { status: 200 })
       }
       return NextResponse.json({ error: 'Erro ao excluir.' }, { status: 400 })
@@ -103,6 +108,7 @@ export function hierRoutes(table: string, parentField: string, parentTable: stri
         `INSERT INTO public.${table}(code, name, ${parentField}) VALUES($1,$2,$3)
          RETURNING id, code, name, is_active, ${parentField}`,
         [b.code, b.name, b[parentField] || null])
+      await audit({ user_id: u.id, user_email: u.email, action: 'CREATE', entity: table, entity_id: rows[0].id, detail: `${b.code} — ${b.name}` })
       return NextResponse.json(rows[0])
     } catch (e: any) {
       return NextResponse.json({ error: dupMsg(e) }, { status: 400 })
@@ -120,6 +126,7 @@ export function hierRoutes(table: string, parentField: string, parentTable: stri
     vals.push(b.id)
     try {
       await pool.query(`UPDATE public.${table} SET ${sets.join(',')} WHERE id=$${i}`, vals)
+      await audit({ user_id: u.id, user_email: u.email, action: 'UPDATE', entity: table, entity_id: b.id, detail: b.name || b.code || null })
       return NextResponse.json({ ok: true })
     } catch (e: any) {
       return NextResponse.json({ error: dupMsg(e) }, { status: 400 })
@@ -132,10 +139,12 @@ export function hierRoutes(table: string, parentField: string, parentTable: stri
     if (!b?.id) return NextResponse.json({ error: 'id obrigatório' }, { status: 400 })
     try {
       await pool.query(`DELETE FROM public.${table} WHERE id=$1`, [b.id])
+      await audit({ user_id: u.id, user_email: u.email, action: 'DELETE', entity: table, entity_id: b.id })
       return NextResponse.json({ ok: true })
     } catch (e: any) {
       if (e?.code === '23503') {
         await pool.query(`UPDATE public.${table} SET is_active=false WHERE id=$1`, [b.id])
+        await audit({ user_id: u.id, user_email: u.email, action: 'UPDATE', entity: table, entity_id: b.id, detail: 'desativado (em uso)' })
         return NextResponse.json({ ok: true, deactivated: true })
       }
       return NextResponse.json({ error: 'Erro ao excluir.' }, { status: 400 })

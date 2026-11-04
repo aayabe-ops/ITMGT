@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { AuthUser } from '@/lib/auth'
 import { Unit } from '@/lib/types'
-import { LayoutDashboard, Upload, FileText, Settings2, Users, LogOut, Menu, Building2, BarChart2, Truck, Tags, Boxes, FolderKanban, Layers, Globe, ClipboardCheck, Cpu, Share2, Building, CircleDollarSign, ArrowLeftRight, Wallet, ChevronDown, FileSignature, Warehouse, Receipt, Gauge, LineChart, HardDrive, KeyRound } from 'lucide-react'
+import { LayoutDashboard, Upload, FileText, Settings2, Users, LogOut, Menu, Building2, BarChart2, Truck, Tags, Boxes, FolderKanban, Layers, Globe, ClipboardCheck, Cpu, Share2, Building, CircleDollarSign, ArrowLeftRight, Wallet, ChevronDown, FileSignature, Warehouse, Receipt, Gauge, LineChart, HardDrive, KeyRound, Shield } from 'lucide-react'
 import clsx from 'clsx'
 import { useTranslations } from 'next-intl'
 import LangSwitcher from '@/components/LangSwitcher'
@@ -50,7 +50,8 @@ export default function Layout({ user, unit, children }: Props) {
     // ── CONFIGURAÇÕES (isolada no rodapé) — 4 grupos por tarefa + Saúde do cadastro (home).
     // Ordem dentro de cada grupo = ordem de preenchimento (dependências).
     { key: 'visao', section: 'config', items: [
-      { href: '/prontidao', key: 'readiness', icon: Gauge },
+      { href: '/prontidao',  key: 'readiness',  icon: Gauge },
+      { href: '/monitoring', key: 'monitoring', icon: Shield },
     ] },
     { key: 'estrutura', section: 'config', items: [
       { href: '/cadastros/moedas',       key: 'currencies',  icon: CircleDollarSign },
@@ -89,6 +90,9 @@ export default function Layout({ user, unit, children }: Props) {
     ] },
     { key: 'inventario', items: [
       { href: '/inventory/relatorio', key: 'invReport', icon: BarChart2 },
+    ] },
+    { key: 'visao', items: [
+      { href: '/monitoring', key: 'monitoring', icon: Shield },
     ] },
   ]
   // Lançador: só o que opera (dashboard + Ordem de pagamento).

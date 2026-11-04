@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
+import { audit } from '@/lib/audit'
 import pool from '@/lib/db'
 import bcrypt from 'bcryptjs'
 
@@ -48,6 +49,7 @@ export async function PUT(req: NextRequest) {
       [email, full_name || null, hash, role || 'unit_viewer', platform_id || null, country_id || null, unit_id || null]
     )
     await syncUserCountries(rows[0].id, body.country_ids)
+    await audit({ user_id: user.id, user_email: user.email, action: 'CREATE', entity: 'users', entity_id: rows[0].id, detail: `${email} (${role || 'unit_viewer'})` })
     return NextResponse.json({ ok: true, id: rows[0].id })
   }
 
@@ -68,5 +70,6 @@ export async function PUT(req: NextRequest) {
     )
   }
   await syncUserCountries(id, body.country_ids)
+  await audit({ user_id: user.id, user_email: user.email, action: 'UPDATE', entity: 'users', entity_id: id, detail: `${full_name || ''} (${role})${password ? ' · senha alterada' : ''}` })
   return NextResponse.json({ ok: true })
 }

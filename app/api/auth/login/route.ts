@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import pool from '@/lib/db'
 import { signToken, COOKIE } from '@/lib/auth'
+import { audit } from '@/lib/audit'
 
 export async function POST(req: NextRequest) {
   const { email, password } = await req.json()
@@ -17,13 +18,17 @@ export async function POST(req: NextRequest) {
 
   const user = rows[0]
   if (!user) {
+    await audit({ user_email: String(email).toLowerCase().trim(), action: 'LOGIN_FAIL', detail: 'usuário inexistente ou inativo' })
     return NextResponse.json({ error: 'E-mail ou senha inválidos' }, { status: 401 })
   }
 
   const valid = await bcrypt.compare(password, user.password_hash)
   if (!valid) {
+    await audit({ user_id: user.id, user_email: user.email, action: 'LOGIN_FAIL', detail: 'senha inválida' })
     return NextResponse.json({ error: 'E-mail ou senha inválidos' }, { status: 401 })
   }
+
+  await audit({ user_id: user.id, user_email: user.email, action: 'LOGIN_OK' })
 
   const token = signToken({
     id: user.id,

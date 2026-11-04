@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser, canManageBudget } from '@/lib/auth'
+import { audit } from '@/lib/audit'
 import pool from '@/lib/db'
 import { writableUnitIds, outOfScopeMsg } from '@/lib/scope'
 
@@ -78,6 +79,7 @@ export async function POST(req: NextRequest) {
     } finally {
       client.release()
     }
+    await audit({ user_id: user!.id, user_email: user!.email, action: 'IMPORT', entity: 'budget_lines', detail: `substituiu o ano ${defaultYear}: ${saved} linha(s)${errors ? `, ${errors} erro(s)` : ''}` })
     return NextResponse.json({ saved, errors, count: saved, replaced_year: defaultYear })
   }
 
@@ -136,5 +138,6 @@ export async function POST(req: NextRequest) {
     client.release()
   }
 
+  await audit({ user_id: user!.id, user_email: user!.email, action: 'UPDATE', entity: 'budget_lines', detail: `orçamento: ${saved} linha(s) salva(s)${errors ? `, ${errors} erro(s)` : ''}` })
   return NextResponse.json({ saved, errors, count: saved })
 }

@@ -17,8 +17,13 @@ export async function POST(req: NextRequest) {
   const cur: string = b.currency || 'USD'
   const year = b.year
   const mm = b.month ? String(b.month).padStart(2, '0') : ''
-  const periodLabel = b.period_kind === 'YTD' && mm ? `YTD (acumulado até ${mm}/${year})`
-    : mm ? `mês ${mm}/${year}` : `ano ${year}`
+  const lang: 'pt' | 'es' | 'en' = ['pt', 'es', 'en'].includes(b.lang) ? b.lang : 'pt'
+  const PL: Record<string, { ytd: string; month: string; year: string }> = {
+    pt: { ytd: `YTD (acumulado até ${mm}/${year})`, month: `mês ${mm}/${year}`, year: `ano ${year}` },
+    es: { ytd: `YTD (acumulado hasta ${mm}/${year})`, month: `mes ${mm}/${year}`, year: `año ${year}` },
+    en: { ytd: `YTD (through ${mm}/${year})`, month: `month ${mm}/${year}`, year: `year ${year}` },
+  }
+  const periodLabel = b.period_kind === 'YTD' && mm ? PL[lang].ytd : mm ? PL[lang].month : PL[lang].year
   const byCategory = Array.isArray(b.byCategory) ? b.byCategory : []
   const bySupplier = Array.isArray(b.bySupplier) ? b.bySupplier : []
   const byCountry = Array.isArray(b.byCountry) ? b.byCountry : []
@@ -54,6 +59,12 @@ export async function POST(req: NextRequest) {
   const focoRealizado = `Foque nos DESVIOS orçado × realizado, causas prováveis e ações corretivas.`
   const focoBudget = `Ainda não há Realizado lançado. Foque na COMPOSIÇÃO do orçamento, CONCENTRAÇÃO de fornecedores (risco de dependência) e VARIAÇÃO vs ${year - 1}.`
 
+  const OUT: Record<string, { respond: string; concise: string; topics: string; h0: string; h1: string; h2: string; h3: string }> = {
+    pt: { respond: 'Responda em português', concise: 'objetivo', topics: 'com estes tópicos em markdown', h0: 'Resumo executivo (3-4 linhas)', h1: 'Concentração e riscos (fornecedores/categorias dominantes)', h2: 'Variação vs ano anterior', h3: 'Recomendações (ações acionáveis)' },
+    es: { respond: 'Responde en español', concise: 'conciso', topics: 'con estos temas en markdown', h0: 'Resumen ejecutivo (3-4 líneas)', h1: 'Concentración y riesgos (proveedores/categorías dominantes)', h2: 'Variación vs año anterior', h3: 'Recomendaciones (acciones accionables)' },
+    en: { respond: 'Answer in English', concise: 'concise', topics: 'with these topics in markdown', h0: 'Executive summary (3-4 lines)', h1: 'Concentration and risks (dominant suppliers/categories)', h2: 'Variation vs previous year', h3: 'Recommendations (actionable)' },
+  }
+
   const prompt = `Você é um controller de custos de TI. Analise o orçamento de TI (${periodLabel}), valores em ${cur}.
 
 RESUMO
@@ -73,11 +84,11 @@ ${yoy || '  —'}
 
 ${hasActual ? focoRealizado : focoBudget}
 
-Responda em português, objetivo, com estes tópicos em markdown:
-**Resumo executivo** (3-4 linhas)
-**Concentração e riscos** (bullets: fornecedores/categorias dominantes)
-**Variação vs ano anterior** (bullets)
-**Recomendações** (bullets acionáveis)`
+${OUT[lang].respond}, ${OUT[lang].concise}, ${OUT[lang].topics}:
+**${OUT[lang].h0}**
+**${OUT[lang].h1}**
+**${OUT[lang].h2}**
+**${OUT[lang].h3}**`
 
   try {
     const res = await fetch(`${OLLAMA_URL}/api/generate`, {

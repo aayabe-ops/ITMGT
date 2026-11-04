@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser, canManageInventory } from '@/lib/auth'
 import { writableUnidadeIds, checkUnidadesWritable, outOfScopeMsg } from '@/lib/scope'
+import { audit } from '@/lib/audit'
 import pool from '@/lib/db'
 
 const noauth = () => NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
@@ -47,6 +48,7 @@ export async function POST(req: NextRequest) {
   const ph = fields.map((_, i) => `$${i + 1}`).join(',')
   try {
     const { rows } = await pool.query(`INSERT INTO public.licenses(${fields.join(',')}) VALUES(${ph}) RETURNING id`, vals)
+    await audit({ user_id: user.id, user_email: user.email, action: 'CREATE', entity: 'licenses', entity_id: rows[0].id, detail: b.product || null })
     return NextResponse.json({ ok: true, id: rows[0].id })
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'Erro ao inserir.' }, { status: 400 })
@@ -69,6 +71,7 @@ export async function PATCH(req: NextRequest) {
   vals.push(b.id)
   try {
     await pool.query(`UPDATE public.licenses SET ${sets.join(',')} WHERE id=$${i}`, vals)
+    await audit({ user_id: user.id, user_email: user.email, action: 'UPDATE', entity: 'licenses', entity_id: b.id, detail: b.product || null })
     return NextResponse.json({ ok: true })
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'Erro ao atualizar.' }, { status: 400 })
@@ -83,5 +86,6 @@ export async function DELETE(req: NextRequest) {
   if (!cur) return NextResponse.json({ ok: true })
   if (cur.unidade_id) { const chk = await checkUnidadesWritable(user, [cur.unidade_id]); if (!chk.ok) return NextResponse.json({ error: outOfScopeMsg(chk.count) }, { status: 403 }) }
   await pool.query('DELETE FROM public.licenses WHERE id=$1', [b.id])
+  await audit({ user_id: user.id, user_email: user.email, action: 'DELETE', entity: 'licenses', entity_id: b.id })
   return NextResponse.json({ ok: true })
 }

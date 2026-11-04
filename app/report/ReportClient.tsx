@@ -102,6 +102,7 @@ interface Props {
 export default function ReportClient({ userRole, countries, companies, units, categories, suppliers }: Props) {
   const t = useTranslations('analise')
   const tc = useTranslations('common')
+  const locale = useLocale()
   const { long: monLong, short: monShort } = useMonths()
 
   const [year, setYear] = useState(DEFAULT_YEAR)
@@ -212,7 +213,7 @@ export default function ReportClient({ userRole, countries, companies, units, ca
       const res = await fetch('/api/report/ai', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          year, month: month || null, period_kind: periodKind, currency: displayCur,
+          year, month: month || null, period_kind: periodKind, currency: displayCur, lang: locale,
           byCategory: data.byCategory, bySupplier: data.bySupplier, byCountry: data.byCountry,
           byCostClass: data.byCostClass, byCurrency: data.byCurrency, prevByCategory: data.prevByCategory,
         }),
